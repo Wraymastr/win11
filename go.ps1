@@ -42,12 +42,23 @@ Set-ItemProperty -Path $AdsPath -Name "SubscribedContent-338387Enabled" -Value 0
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "PeopleBand" -Value 0 -ErrorAction SilentlyContinue
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "HideSCAMeetNow" -Value 1 -ErrorAction SilentlyContinue
 
+#Declutter the Search Bar
+Write-Host "[UI] Disabling Search Highlights and Web Search..." -ForegroundColor Cyan
+# Disable Search Highlights (the icons in the search bar)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings" -Name "IsDynamicSearchBoxPresent" -Value 0
+# Disable Bing Search in the Start Menu (keeps search local and fast)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0
+
 # ==============================
 # Performance Tweaks
 # ==============================
 Write-Host "[Perf] Disabling Hibernation and Edge Startup Boost..." -ForegroundColor Cyan
 powercfg.exe /hibernate off
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "StartupBoostEnabled" -Value 0 -ErrorAction SilentlyContinue
+
+Write-Host "[Config] Setting Active Hours (8 AM - 5 PM)..." -ForegroundColor Cyan
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "ActiveHoursStart" -Value 8
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "ActiveHoursEnd" -Value 17
 
 # ==============================
 # Remove Microsoft bloat (VERBOSE)
@@ -94,6 +105,43 @@ if (-not (Test-Path $oneDriveSetup)) { $oneDriveSetup = "$env:SystemRoot\System3
 if (Test-Path $oneDriveSetup) {
     Start-Process $oneDriveSetup "/uninstall" -NoNewWindow -Wait
     Write-Host "[OneDrive] Uninstall complete"
+}
+
+# ==============================
+# HP Specific Bloatware Removal
+# ==============================
+Write-Host "[HP-Cleanup] Neutralizing HP Wolf Security and Bloat..." -ForegroundColor Yellow
+
+# 1. Kill the services first (so they don't block uninstallation)
+$hpServices = @("HPSysInfoCap", "HPAppHelperCap", "HPDiagsCap", "HPTouchpointRecoveryService", "HPNetworkCap", "HPAnalyticsService")
+foreach ($service in $hpServices) {
+    Stop-Service -Name $service -Force -ErrorAction SilentlyContinue
+    Set-Service -Name $service -StartupType Disabled -ErrorAction SilentlyContinue
+}
+
+# 2. Uninstall HP Apps (using Winget IDs where possible for cleaner removal)
+$hpApps = @(
+    "HP.HPSupportAssistant", 
+    "HP.HPQuickDrop", 
+    "HP.HPPrivacySettings", 
+    "HP.HPConnectionOptimizer",
+    "HP.HPSmart"
+)
+
+foreach ($app in $hpApps) {
+    Write-Host "  Removing $app..."
+    winget uninstall --id $app -e --accept-source-agreements --ignore-uninstalled -h -q
+}
+
+# 3. Target HP Wolf Security / Sure Sense (The stubborn ones)
+# These often require a direct call to the MSI uninstaller
+Write-Host "  Targeting HP Wolf Security / Sure Sense..." -ForegroundColor Cyan
+$wolf = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*HP Wolf Security*" -or $_.Name -like "*HP Sure Sense*" }
+if ($wolf) {
+    foreach ($item in $wolf) {
+        Write-Host "    Uninstalling $($item.Name)..."
+        $item.Uninstall() | Out-Null
+    }
 }
 
 # ==============================
