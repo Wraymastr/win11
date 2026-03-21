@@ -117,6 +117,6 @@ Write-Host "[Install] Installing Firefox..." -ForegroundColor Green
 winget install --id Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements
 
 Write-Host "[Install] Installing VLC..." -ForegroundColor Green
-winget install --id vlc.VideoLan -e --accept-source-agreements --accept-package-agreements
+winget install --id VideoLAN.vlc -e --accept-source-agreements --accept-package-agreements
 
 Write-Host "All tasks complete! Please restart to see the full effect. ??" -ForegroundColor Magenta
