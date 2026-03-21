@@ -106,44 +106,6 @@ if (Test-Path $oneDriveSetup) {
     Start-Process $oneDriveSetup "/uninstall" -NoNewWindow -Wait
     Write-Host "[OneDrive] Uninstall complete"
 }
-
-# ==============================
-# HP Specific Bloatware Removal
-# ==============================
-Write-Host "[HP-Cleanup] Neutralizing HP Wolf Security and Bloat..." -ForegroundColor Yellow
-
-# 1. Kill the services first (so they don't block uninstallation)
-$hpServices = @("HPSysInfoCap", "HPAppHelperCap", "HPDiagsCap", "HPTouchpointRecoveryService", "HPNetworkCap", "HPAnalyticsService")
-foreach ($service in $hpServices) {
-    Stop-Service -Name $service -Force -ErrorAction SilentlyContinue
-    Set-Service -Name $service -StartupType Disabled -ErrorAction SilentlyContinue
-}
-
-# 2. Uninstall HP Apps (using Winget IDs where possible for cleaner removal)
-$hpApps = @(
-    "HP.HPSupportAssistant", 
-    "HP.HPQuickDrop", 
-    "HP.HPPrivacySettings", 
-    "HP.HPConnectionOptimizer",
-    "HP.HPSmart"
-)
-
-foreach ($app in $hpApps) {
-    Write-Host "  Removing $app..."
-    winget uninstall --id $app -e --accept-source-agreements --ignore-uninstalled -h -q
-}
-
-# 3. Target HP Wolf Security / Sure Sense (The stubborn ones)
-# These often require a direct call to the MSI uninstaller
-Write-Host "  Targeting HP Wolf Security / Sure Sense..." -ForegroundColor Cyan
-$wolf = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*HP Wolf Security*" -or $_.Name -like "*HP Sure Sense*" }
-if ($wolf) {
-    foreach ($item in $wolf) {
-        Write-Host "    Uninstalling $($item.Name)..."
-        $item.Uninstall() | Out-Null
-    }
-}
-
 # ==============================
 # Autostart Cleanup (Legacy Run Keys)
 # ==============================
@@ -153,18 +115,43 @@ Remove-ItemProperty -Path $RunPath -Name "OneDrive" -ErrorAction SilentlyContinu
 Remove-ItemProperty -Path $RunPath -Name "com.squirrel.Teams.Teams" -ErrorAction SilentlyContinue
 
 # ==============================
+# HP Specific Bloatware Removal
+# ==============================
+Write-Host "[HP-Cleanup] Neutralizing HP Wolf Security and Bloat..." -ForegroundColor Yellow
+
+$hpApps = @("HP.HPSupportAssistant", "HP.HPQuickDrop", "HP.HPPrivacySettings", "HP.HPConnectionOptimizer", "HP.HPSmart")
+
+foreach ($app in $hpApps) {
+    Write-Host "  Processing $app..."
+    # Removed --ignore-uninstalled for better compatibility
+    winget uninstall --id $app -e --accept-source-agreements -h --force
+}
+
+# Targeted WMI cleanup for the stubborn Wolf Security
+$wolf = Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "*HP Wolf Security*" -or $_.Name -like "*HP Sure Sense*" }
+if ($wolf) {
+    foreach ($item in $wolf) {
+        Write-Host "    Force uninstalling $($item.Name)..."
+        Invoke-CimMethod -InputObject $item -MethodName "Uninstall" | Out-Null
+    }
+}
+
+# ==============================
 # Install apps
 # ==============================
-Write-Host "[Install] Installing Google Chrome..." -ForegroundColor Green
-winget install --id Google.Chrome -e --accept-source-agreements --accept-package-agreements
+Write-Host "[Install] Updating/Installing Core Apps..." -ForegroundColor Green
 
-Write-Host "[Install] Installing Google Drive for Desktop..." -ForegroundColor Green
-winget install --id Google.GoogleDrive -e --accept-source-agreements --accept-package-agreements
+# Use a simple array to loop through installs
+$appsToInstall = @(
+    "Google.Chrome",
+    "Google.GoogleDrive",
+    "VideoLAN.VLC",
+    "Mozilla.Firefox"
+)
 
-Write-Host "[Install] Installing Firefox..." -ForegroundColor Green
-winget install --id Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements
-
-Write-Host "[Install] Installing VLC..." -ForegroundColor Green
-winget install --id VideoLAN.vlc -e --accept-source-agreements --accept-package-agreements
+foreach ($id in $appsToInstall) {
+    Write-Host "  Installing $id..."
+    winget install --id $id -e --accept-source-agreements --accept-package-agreements
+}
 
 Write-Host "All tasks complete! Please restart to see the full effect. ??" -ForegroundColor Magenta
