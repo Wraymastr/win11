@@ -62,8 +62,8 @@ function New-SectionLbl($text, $y) {
 # MAIN WINDOW  — 500 wide x 660 tall (more square, smaller)
 # ============================================================
 $Form = New-Object Windows.Forms.Form
-$Form.Text = "NULLIFY WINDOWS"
-$Form.Size = "500,660"
+$Form.Text = "APEX CONFIGURATOR"
+$Form.Size = "500,720"
 $Form.MinimumSize = "500,560"
 $Form.StartPosition = "CenterScreen"
 $Form.BackColor = $bg
@@ -515,13 +515,13 @@ $lblUptime.Add_Click({
 # OUTPUT CONSOLE
 # ============================================================
 $consLbl = New-Object Windows.Forms.Label
-$consLbl.Text="OUTPUT LOG"; $consLbl.Location="12,388"; $consLbl.Size="200,13"
+$consLbl.Text="OUTPUT LOG"; $consLbl.Location="12,455"; $consLbl.Size="200,13"
 $consLbl.ForeColor=$txtMuted; $consLbl.BackColor=[Drawing.Color]::Transparent
 $consLbl.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold)
 $Form.Controls.Add($consLbl)
 
 $ConsoleOutput = New-Object Windows.Forms.RichTextBox
-$ConsoleOutput.Location="10,410"; $ConsoleOutput.Size="470,218"
+$ConsoleOutput.Location="12,475"; $ConsoleOutput.Size="470,218"
 $ConsoleOutput.BackColor=$bgConsole; $ConsoleOutput.ForeColor=$txtConsole
 $ConsoleOutput.ReadOnly=$true; $ConsoleOutput.BorderStyle="None"
 $ConsoleOutput.Font=New-Object Drawing.Font("Consolas",8)
@@ -604,26 +604,25 @@ $bannerTimer.Start()
 # ============================================================
 # MAIN BUTTONS
 # ============================================================
-New-SectionLbl "" 120   # spacer
-
 $bAll = New-Object Windows.Forms.Button
-$bAll.Text="  FULL NUKE -- Full debloat, tweaks and install essential apps"
-$bAll.Location="10,144"; $bAll.Size="470,38"
+$bAll.Text="  FULL NUKE -- Full debloat, tweaks and Provisioning"
+$bAll.Location="10,125"; $bAll.Size="470,38" # Moved up from 144
 $bAll.FlatStyle="Flat"; $bAll.ForeColor=$btnRun[1]; $bAll.BackColor=$btnRun[0]
 $bAll.Font=New-Object Drawing.Font("Segoe UI",10,[Drawing.FontStyle]::Bold)
 $bAll.FlatAppearance.BorderColor=$border; $bAll.FlatAppearance.BorderSize=1
 $bAll.TextAlign="MiddleLeft"; $bAll.Padding=New-Object Windows.Forms.Padding(10,0,0,0)
 $Form.Controls.Add($bAll)
 
-New-SectionLbl "SYSTEM CLEANUP" 190
-$b1 = New-Btn $Form "  SANITIZE WINDOWS  (Remove Bloat + Essential Tweaks)" 10 204 470 36 $btnRed
+New-SectionLbl "SYSTEM CLEANUP" 175
+$b1 = New-Btn $Form "  SANITIZE WINDOWS  (Remove Bloat + Essential Tweaks)" 10 192 470 36 $btnRed
 
-New-SectionLbl "CONFIGURATION" 248
-$b2 = New-Btn $Form "  EXTRACT VENDORS -- Debloat vendor applications"   10 262 470 36 $btnAmb
-$b3 = New-Btn $Form "  PROVISIONING -- Install Applications" 10 304 470 36 $btnBlue
-$b4 = New-Btn $Form "  IDENTITY -- Create Accounts"     10 346 470 36 $btnRun
+New-SectionLbl "CONFIGURATION" 240
+$b2 = New-Btn $Form "  EXTRACT VENDORS -- Debloat vendor applications"    10 258 470 36 $btnAmb
+$b3 = New-Btn $Form "  PROVISIONING -- Install Applications" 10 300 470 36 $btnBlue
+$b4 = New-Btn $Form "  IDENTITY -- Create Accounts"      10 342 470 36 $btnRun
 
-$ExitBtn.Location="10,638"   # was 620, pushed down
+New-SectionLbl "DIAGNOSTICS" 390 # Fixed from 200
+$b5 = New-Btn $Form "  Diagnostics & Hardware Tests" 10 408 470 36 $btnAmb
 
 # ============================================================
 # LOGIC FUNCTIONS
@@ -859,6 +858,7 @@ function Show-AppPicker($RunAfter) {
     AP-Check "Google Drive"                "Google.GoogleDrive"              $true
     AP-Check "VLC Media Player"            "VideoLAN.VLC"                    $true
     AP-Check "7-Zip"                       "7zip.7zip"                       $true
+    AP-Check "Adobe Acrobat Reader"        "Adobe.Acrobat.Reader.64-bit"     $true
 
     $script:ay += 6
     # -------------------------------------------------------
@@ -873,6 +873,11 @@ function Show-AppPicker($RunAfter) {
     AP-Check "Malwarebytes"                "Malwarebytes.Malwarebytes"       $false
     AP-Check "Winaero Tweaker"             "WinAero.WinaeroTweaker"          $false
     AP-Check "O&O ShutUp10  (privacy)"     "OOSU10"                          $false
+    AP-Check "PowerToys"                   "Microsoft.PowerToys"             $false
+    AP-Check "Process Explorer"            "Microsoft.Sysinternals.ProcessExplorer" $false
+    AP-Check "Bulk Crap Uninstaller"       "Klocman.BulkCrapUninstaller"     $false
+    AP-Check "Autoruns"                    "Microsoft.Sysinternals.Autoruns" $false
+    AP-Check "K-Lite Codec Pack Standard"  "CodecGuide.K-LiteCodecPack.Standard" $false
 
     $script:ay += 8
     AP-Section "SET AS DEFAULT"
@@ -1070,6 +1075,194 @@ $b4.Add_Click({
     $F.ShowDialog()
 })
 
+# ============================================================
+# BUTTON 5 - DIAGNOSTICS
+# ============================================================
+$b5.Add_Click({
+    [System.Media.SystemSounds]::Asterisk.Play()
+
+    $DF = New-SubForm "Diagnostics & Hardware Tests" 480 420
+
+    New-SubLbl $DF "Run hardware diagnostics and health checks" 15 12 440 18 $txtMuted 8 | Out-Null
+
+    # Battery Report
+    $btnBat = New-Object Windows.Forms.Button
+    $btnBat.Text="Battery Report"; $btnBat.Location="15,45"; $btnBat.Size="440,36"
+    $btnBat.FlatStyle="Flat"; $btnBat.ForeColor=$btnTeal[1]; $btnBat.BackColor=$btnTeal[0]
+    $btnBat.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnBat.FlatAppearance.BorderColor=$border; $btnBat.FlatAppearance.BorderSize=1
+    $btnBat.Add_Click({
+        Write-ToUI "Generating battery report..." "Cyan"
+        $batPath = "$env:USERPROFILE\Desktop\battery-report.html"
+        powercfg /batteryreport /output $batPath 2>&1 | Out-Null
+        if(Test-Path $batPath){
+            Write-ToUI "Battery report saved to Desktop." "Lime"
+            Start-Process $batPath
+        } else {
+            Write-ToUI "Battery report failed — device may not have a battery." "Orange"
+            [Windows.Forms.MessageBox]::Show("Battery report failed.`n`nThis device may not have a battery, or you need to run as Administrator.","Error")
+        }
+    })
+    $DF.Controls.Add($btnBat)
+
+    # Energy Report (detailed power efficiency diagnostics)
+    $btnEnergy = New-Object Windows.Forms.Button
+    $btnEnergy.Text="Energy Efficiency Report  (takes ~60 seconds)"
+    $btnEnergy.Location="15,89"; $btnEnergy.Size="440,36"
+    $btnEnergy.FlatStyle="Flat"; $btnEnergy.ForeColor=$btnTeal[1]; $btnEnergy.BackColor=$btnTeal[0]
+    $btnEnergy.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnEnergy.FlatAppearance.BorderColor=$border; $btnEnergy.FlatAppearance.BorderSize=1
+    $btnEnergy.Add_Click({
+        Write-ToUI "Running energy report — this takes ~60 seconds..." "Yellow"
+        $DF.Enabled=$false
+        $energyPath = "$env:USERPROFILE\Desktop\energy-report.html"
+        powercfg /energy /output $energyPath /duration 60 2>&1 | Out-Null
+        $DF.Enabled=$true
+        if(Test-Path $energyPath){
+            Write-ToUI "Energy report saved to Desktop." "Lime"
+            Start-Process $energyPath
+        } else {
+            Write-ToUI "Energy report failed." "Orange"
+            [Windows.Forms.MessageBox]::Show("Energy report failed.`n`nRun as Administrator.","Error")
+        }
+    })
+    $DF.Controls.Add($btnEnergy)
+
+    # System Health Report (CBS + DISM integrity checks)
+    $btnHealth = New-Object Windows.Forms.Button
+    $btnHealth.Text="System File Health Check  (DISM + SFC)"
+    $btnHealth.Location="15,133"; $btnHealth.Size="440,36"
+    $btnHealth.FlatStyle="Flat"; $btnHealth.ForeColor=$btnBlue[1]; $btnHealth.BackColor=$btnBlue[0]
+    $btnHealth.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnHealth.FlatAppearance.BorderColor=$border; $btnHealth.FlatAppearance.BorderSize=1
+    $btnHealth.Add_Click({
+        $confirm = [Windows.Forms.MessageBox]::Show(
+            "This will run DISM and SFC scans.`n`nThis can take 5-15 minutes.`n`nContinue?",
+            "Confirm Health Check","YesNo")
+        if($confirm -ne "Yes"){return}
+
+        Write-ToUI "Running DISM health scan..." "Yellow"
+        $DF.Enabled=$false
+        DISM /Online /Cleanup-Image /ScanHealth 2>&1 | Out-Null
+        DISM /Online /Cleanup-Image /RestoreHealth 2>&1 | Out-Null
+        Write-ToUI "DISM complete. Running SFC..." "Yellow"
+        sfc /scannow 2>&1 | Out-Null
+        $DF.Enabled=$true
+        Write-ToUI "System health check complete." "Lime"
+        [Windows.Forms.MessageBox]::Show("System health check complete.`n`nCheck the console log for details.","Done")
+    })
+    $DF.Controls.Add($btnHealth)
+
+    # Memory Diagnostic
+    $btnMem = New-Object Windows.Forms.Button
+    $btnMem.Text="Memory Diagnostic  (requires restart)"
+    $btnMem.Location="15,177"; $btnMem.Size="440,36"
+    $btnMem.FlatStyle="Flat"; $btnMem.ForeColor=$btnAmb[1]; $btnMem.BackColor=$btnAmb[0]
+    $btnMem.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnMem.FlatAppearance.BorderColor=$border; $btnMem.FlatAppearance.BorderSize=1
+    $btnMem.Add_Click({
+        $confirm = [Windows.Forms.MessageBox]::Show(
+            "This will schedule a memory test on next boot.`n`nThe computer will restart and run the diagnostic before Windows loads.`n`nRestart now?",
+            "Confirm Memory Test","YesNo")
+        if($confirm -eq "Yes"){
+            Write-ToUI "Scheduling memory diagnostic..." "Yellow"
+            Start-Process "MdSched.exe"
+        }
+    })
+    $DF.Controls.Add($btnMem)
+
+    # Disk Health (SMART status)
+    $btnDisk = New-Object Windows.Forms.Button
+    $btnDisk.Text="Disk Health Report  (SMART status)"
+    $btnDisk.Location="15,221"; $btnDisk.Size="440,36"
+    $btnDisk.FlatStyle="Flat"; $btnDisk.ForeColor=$btnBlue[1]; $btnDisk.BackColor=$btnBlue[0]
+    $btnDisk.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnDisk.FlatAppearance.BorderColor=$border; $btnDisk.FlatAppearance.BorderSize=1
+    $btnDisk.Add_Click({
+        Write-ToUI "Reading disk SMART data..." "Cyan"
+        $disks = Get-PhysicalDisk | Select-Object FriendlyName,HealthStatus,OperationalStatus,MediaType,Size
+        if($disks){
+            $report = "DISK HEALTH REPORT`n" + ("="*50) + "`n`n"
+            foreach($d in $disks){
+                $sizeGB = [math]::Round($d.Size/1GB, 1)
+                $report += "Drive      : $($d.FriendlyName)`n"
+                $report += "Type       : $($d.MediaType)`n"
+                $report += "Size       : $sizeGB GB`n"
+                $report += "Health     : $($d.HealthStatus)`n"
+                $report += "Status     : $($d.OperationalStatus)`n"
+                $report += ("-"*50) + "`n"
+            }
+            $reportPath = "$env:USERPROFILE\Desktop\disk-health.txt"
+            $report | Out-File $reportPath -Encoding UTF8
+            Write-ToUI "Disk report saved to Desktop." "Lime"
+            Start-Process "notepad.exe" $reportPath
+        } else {
+            Write-ToUI "No disks found." "Orange"
+        }
+    })
+    $DF.Controls.Add($btnDisk)
+
+    # Driver Verifier (advanced — can cause instability if misused)
+    $btnDriver = New-Object Windows.Forms.Button
+    $btnDriver.Text="Open Driver Verifier  (advanced)"
+    $btnDriver.Location="15,265"; $btnDriver.Size="440,36"
+    $btnDriver.FlatStyle="Flat"; $btnDriver.ForeColor=$btnRed[1]; $btnDriver.BackColor=$btnRed[0]
+    $btnDriver.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnDriver.FlatAppearance.BorderColor=$border; $btnDriver.FlatAppearance.BorderSize=1
+    $btnDriver.Add_Click({
+        $confirm = [Windows.Forms.MessageBox]::Show(
+            "Driver Verifier is an advanced diagnostic tool.`n`nMisuse can cause crashes and boot loops.`n`nOnly proceed if you know what you're doing.`n`nContinue?",
+            "Warning — Advanced Tool","YesNo")
+        if($confirm -eq "Yes"){
+            Start-Process "verifier.exe"
+        }
+    })
+    $DF.Controls.Add($btnDriver)
+
+    # Hardware Info Dump
+    $btnHWInfo = New-Object Windows.Forms.Button
+    $btnHWInfo.Text="Hardware Info Dump  (CPU, RAM, GPU)"
+    $btnHWInfo.Location="15,309"; $btnHWInfo.Size="440,36"
+    $btnHWInfo.FlatStyle="Flat"; $btnHWInfo.ForeColor=$btnBlue[1]; $btnHWInfo.BackColor=$btnBlue[0]
+    $btnHWInfo.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $btnHWInfo.FlatAppearance.BorderColor=$border; $btnHWInfo.FlatAppearance.BorderSize=1
+    $btnHWInfo.Add_Click({
+        Write-ToUI "Gathering hardware info..." "Cyan"
+        $cpu = Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed
+        $ram = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+        $gpu = Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion,VideoModeDescription
+
+        $report = "HARDWARE INFO DUMP`n" + ("="*60) + "`n`n"
+        $report += "CPU`n" + ("-"*60) + "`n"
+        $report += "Name       : $($cpu.Name)`n"
+        $report += "Cores      : $($cpu.NumberOfCores) physical / $($cpu.NumberOfLogicalProcessors) logical`n"
+        $report += "Max Speed  : $($cpu.MaxClockSpeed) MHz`n`n"
+
+        $report += "RAM`n" + ("-"*60) + "`n"
+        $totalRAM = [math]::Round($ram.Sum/1GB, 2)
+        $report += "Total      : $totalRAM GB`n`n"
+
+        $report += "GPU`n" + ("-"*60) + "`n"
+        foreach($g in $gpu){
+            $report += "Name       : $($g.Name)`n"
+            $report += "Driver     : $($g.DriverVersion)`n"
+            $report += "Resolution : $($g.VideoModeDescription)`n"
+            $report += ("-"*60) + "`n"
+        }
+
+        $reportPath = "$env:USERPROFILE\Desktop\hardware-info.txt"
+        $report | Out-File $reportPath -Encoding UTF8
+        Write-ToUI "Hardware info saved to Desktop." "Lime"
+        Start-Process "notepad.exe" $reportPath
+    })
+    $DF.Controls.Add($btnHWInfo)
+
+    $btnClose = New-SubBtn $DF "Close" 15 353 100 30 $btnDim
+    $btnClose.Add_Click({$DF.Close()})
+
+    $DF.ShowDialog()
+})
+
 #Run All
 $bAll.Add_Click({
     if([Windows.Forms.MessageBox]::Show(
@@ -1079,7 +1272,7 @@ $bAll.Add_Click({
 
     Show-AppPicker {
         param($sel,$chrome,$vlc)
-        foreach($btn in @($bAll,$b1,$b2,$b3,$b4)){$btn.Enabled=$false}
+        foreach($btn in @($bAll,$b1,$b2,$b3,$b4,$b5)){$btn.Enabled=$false}
         $bAll.Text="  Running..."
         Write-ToUI "=== FULL SETUP STARTED ===" "Yellow"
         Run-Debloat
