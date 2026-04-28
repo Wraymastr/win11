@@ -7,21 +7,20 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 # ============================================================
-# THEME — dark charcoal, two accent colors only
+# THEME
 # ============================================================
-$bg          = [Drawing.Color]::FromArgb(30,  30,  36)   # main window bg
-$bgPanel     = [Drawing.Color]::FromArgb(22,  22,  27)   # info panel / titlebar
-$bgConsole   = [Drawing.Color]::FromArgb(15,  15,  18)   # console area
-$bgSubForm   = [Drawing.Color]::FromArgb(30,  30,  36)   # sub-window bg
-$bgInput     = [Drawing.Color]::FromArgb(22,  22,  27)   # textbox bg
-$border      = [Drawing.Color]::FromArgb(42,  42,  53)   # panel border
-$txtPrimary  = [Drawing.Color]::FromArgb(200, 200, 212)  # main text
-$txtMuted    = [Drawing.Color]::FromArgb(80,  80,  100)  # labels/dividers
-$txtConsole  = [Drawing.Color]::FromArgb(110, 188, 110)  # console green
-$txtLink     = [Drawing.Color]::FromArgb(126, 184, 212)  # clickable labels (blue-ish)
-$txtLinkHov  = [Drawing.Color]::FromArgb(180, 220, 240)  # hover
+$bg          = [Drawing.Color]::FromArgb(30,  30,  36)
+$bgPanel     = [Drawing.Color]::FromArgb(22,  22,  27)
+$bgConsole   = [Drawing.Color]::FromArgb(15,  15,  18)
+$bgSubForm   = [Drawing.Color]::FromArgb(30,  30,  36)
+$bgInput     = [Drawing.Color]::FromArgb(22,  22,  27)
+$border      = [Drawing.Color]::FromArgb(42,  42,  53)
+$txtPrimary  = [Drawing.Color]::FromArgb(200, 200, 212)
+$txtMuted    = [Drawing.Color]::FromArgb(80,  80,  100)
+$txtConsole  = [Drawing.Color]::FromArgb(110, 188, 110)
+$txtLink     = [Drawing.Color]::FromArgb(126, 184, 212)
+$txtLinkHov  = [Drawing.Color]::FromArgb(180, 220, 240)
 
-# Button bg / fg pairs  [bg, fg]
 $btnRun  = @([Drawing.Color]::FromArgb(37,37,53),  [Drawing.Color]::FromArgb(155,143,212))
 $btnRed  = @([Drawing.Color]::FromArgb(42,30,30),  [Drawing.Color]::FromArgb(200,112,112))
 $btnAmb  = @([Drawing.Color]::FromArgb(42,35,24),  [Drawing.Color]::FromArgb(200,148,58))
@@ -34,124 +33,34 @@ $btnDim  = @([Drawing.Color]::FromArgb(22,22,27),  [Drawing.Color]::FromArgb(80,
 # ============================================================
 function New-Btn($parent, $text, $x, $y, $w, $h, $pair) {
     $b = New-Object Windows.Forms.Button
-    $b.Text = $text; $b.Location = "$x,$y"; $b.Size = "$w,$h"
-    $b.FlatStyle = "Flat"; $b.ForeColor = $pair[1]; $b.BackColor = $pair[0]
-    $b.Font = New-Object Drawing.Font("Segoe UI", 9, [Drawing.FontStyle]::Bold)
-    $b.FlatAppearance.BorderColor = $border; $b.FlatAppearance.BorderSize = 1
-    $b.TextAlign = "MiddleLeft"; $b.Padding = New-Object Windows.Forms.Padding(8,0,0,0)
+    $b.Text=$text; $b.Location="$x,$y"; $b.Size="$w,$h"
+    $b.FlatStyle="Flat"; $b.ForeColor=$pair[1]; $b.BackColor=$pair[0]
+    $b.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
+    $b.FlatAppearance.BorderColor=$border; $b.FlatAppearance.BorderSize=1
+    $b.TextAlign="MiddleLeft"; $b.Padding=New-Object Windows.Forms.Padding(8,0,0,0)
+    $b.Anchor="Top,Left,Right"
     $parent.Controls.Add($b); return $b
 }
 
-function New-Lbl($parent, $text, $x, $y, $w, $h, $color, $size=8, $style="Regular") {
-    $l = New-Object Windows.Forms.Label
+function New-Lbl($parent,$text,$x,$y,$w,$h,$color,$size=8,$style="Regular") {
+    $l=New-Object Windows.Forms.Label
     $l.Text=$text; $l.Location="$x,$y"; $l.Size="$w,$h"
     $l.ForeColor=$color; $l.BackColor=[Drawing.Color]::Transparent
     $l.Font=New-Object Drawing.Font("Consolas",$size,[Drawing.FontStyle]::$style)
     $parent.Controls.Add($l); return $l
 }
 
-function New-SectionLbl($text, $y) {
-    $l = New-Object Windows.Forms.Label
+function New-SectionLbl($text,$y) {
+    $l=New-Object Windows.Forms.Label
     $l.Text=$text; $l.Location="12,$y"; $l.Size="430,14"
     $l.ForeColor=$txtMuted; $l.BackColor=[Drawing.Color]::Transparent
     $l.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold)
+    $l.Anchor="Top,Left,Right"
     $Form.Controls.Add($l)
 }
 
-# ============================================================
-# MAIN WINDOW  — 500 wide x 660 tall (more square, smaller)
-# ============================================================
-$Form = New-Object Windows.Forms.Form
-$Form.Text = "WRAYNET WINDOWS UTILITY"
-$Form.Size = "500,720"
-$Form.MinimumSize = "500,560"
-$Form.StartPosition = "CenterScreen"
-$Form.BackColor = $bg
-$Form.FormBorderStyle = "Sizable"      # resizable!
-$Form.MaximizeBox = $false
-
-# ============================================================
-# INFO PANEL
-# ============================================================
-$InfoPanel = New-Object Windows.Forms.Panel
-$InfoPanel.Location = "10,8"
-$InfoPanel.Size = "470,108"
-$InfoPanel.BackColor = $bgPanel
-$InfoPanel.BorderStyle = "FixedSingle"
-$Form.Controls.Add($InfoPanel)
-
-$rowY = @(8,24,40,56,72,88)
-$keys = @("COMPUTER :","USER     :","WINDOWS  :","DOMAIN   :","NETWORK  :","UPTIME   :")
-$keyLbls = @(); $valLbls = @()
-for ($i=0; $i -lt 6; $i++) {
-    $kl = New-Lbl $InfoPanel $keys[$i] 8 $rowY[$i] 82 16 $txtMuted 8
-    $vl = New-Lbl $InfoPanel "" 92 $rowY[$i] 355 16 $txtLink 8
-    $vl.Cursor = [Windows.Forms.Cursors]::Hand
-    $keyLbls += $kl; $valLbls += $vl
-}
-$lblComputer=$valLbls[0]; $lblUser=$valLbls[1]
-$lblWindows=$valLbls[2];  $lblDomain=$valLbls[3]
-$lblNetwork=$valLbls[4];  $lblUptime=$valLbls[5]
-
-$RefBtn = New-Object Windows.Forms.Button
-$RefBtn.Text="Refresh"; $RefBtn.Location="390,85"; $RefBtn.Size="68,16"
-$RefBtn.FlatStyle="Flat"; $RefBtn.ForeColor=$txtMuted; $RefBtn.BackColor=$bgPanel
-$RefBtn.Font=New-Object Drawing.Font("Segoe UI",7)
-$RefBtn.FlatAppearance.BorderColor=$border; $RefBtn.FlatAppearance.BorderSize=1
-$InfoPanel.Controls.Add($RefBtn)
-
-function Make-Clickable($lbl) {
-    $lbl.Add_MouseEnter({ $lbl.ForeColor=$txtLinkHov; $lbl.Font=New-Object Drawing.Font("Consolas",8,[Drawing.FontStyle]::Underline) })
-    $lbl.Add_MouseLeave({ $lbl.ForeColor=$txtLink;    $lbl.Font=New-Object Drawing.Font("Consolas",8) })
-}
-Make-Clickable $lblComputer; Make-Clickable $lblUser
-Make-Clickable $lblWindows;  Make-Clickable $lblDomain
-Make-Clickable $lblNetwork;  Make-Clickable $lblUptime
-
-function Refresh-SystemInfo {
-    $cs = Get-CimInstance Win32_ComputerSystem
-    $os = Get-CimInstance Win32_OperatingSystem
-
-    $lblComputer.Text = $cs.Name
-    $lblUser.Text     = $env:USERNAME
-    $lblWindows.Text  = "$($os.Caption) (Build $($os.BuildNumber))"
-
-    if ($cs.PartOfDomain) {
-        $lblDomain.Text     = "DOMAIN: $($cs.Domain)"
-        $lblDomain.ForeColor= [Drawing.Color]::FromArgb(112,184,168)
-    } else {
-        $lblDomain.Text     = "WORKGROUP: $($cs.Workgroup)"
-        $lblDomain.ForeColor= [Drawing.Color]::FromArgb(200,148,58)
-    }
-
-    # Network info — grab first non-loopback IPv4
-    # Inside Refresh-SystemInfo — replace the network section:
-    $adapters = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-                Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*" }
-
-    if ($adapters) {
-        $online = Test-Connection -ComputerName "1.1.1.1" -Count 1 -Quiet -ErrorAction SilentlyContinue
-        $onlineStr = if ($online) { "  [ONLINE]" } else { "  [NO INTERNET]" }
-        # Show all adapter IPs joined together
-        $ipList = ($adapters | ForEach-Object { $_.IPAddress }) -join "  /  "
-        $lblNetwork.Text      = "$ipList$onlineStr"
-        $lblNetwork.ForeColor = if ($online) { [Drawing.Color]::FromArgb(112,184,168) } else { [Drawing.Color]::FromArgb(200,112,112) }
-    } else {
-        $lblNetwork.Text      = "No network adapter found"
-        $lblNetwork.ForeColor = [Drawing.Color]::FromArgb(200,112,112)
-    }
-
-    $up = (Get-Date) - $os.LastBootUpTime
-    $lblUptime.Text = "$([int]$up.TotalHours)h $($up.Minutes)m since last boot"
-}
-Refresh-SystemInfo
-$RefBtn.Add_Click({ Refresh-SystemInfo })
-
-# ============================================================
-# SUB-WINDOW FACTORY — dark themed, always closes BEFORE work
-# ============================================================
-function New-SubForm($title, $w, $h) {
-    $f = New-Object Windows.Forms.Form
+function New-SubForm($title,$w,$h) {
+    $f=New-Object Windows.Forms.Form
     $f.Text=$title; $f.Size="$w,$h"; $f.StartPosition="CenterParent"
     $f.BackColor=$bgSubForm; $f.ForeColor=$txtPrimary
     $f.FormBorderStyle="FixedDialog"; $f.MaximizeBox=$false; $f.MinimizeBox=$false
@@ -185,14 +94,100 @@ function New-SubTxt($parent,$x,$y,$w,$val="") {
 }
 
 # ============================================================
+# MAIN WINDOW
+# ============================================================
+$Form = New-Object Windows.Forms.Form
+$Form.Text = "WRAYNET WINDOWS UTILITY"
+$Form.StartPosition = "CenterScreen"
+$Form.BackColor = $bg
+$Form.FormBorderStyle = "Sizable"
+$Form.MaximizeBox = $false
+$Form.AutoScaleMode = "Dpi"
+
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+$optimalWidth  = [Math]::Min(520, [Math]::Max(480, $screen.Width  * 0.35))
+$optimalHeight = [Math]::Min(820, [Math]::Max(650, $screen.Height * 0.90))
+$Form.Size = "$optimalWidth,$optimalHeight"
+$Form.MinimumSize = "480,650"
+
+# ============================================================
+# INFO PANEL
+# ============================================================
+$InfoPanel = New-Object Windows.Forms.Panel
+$InfoPanel.Location = "10,8"
+$InfoPanel.Size = "470,108"
+$InfoPanel.BackColor = $bgPanel
+$InfoPanel.BorderStyle = "FixedSingle"
+$InfoPanel.Anchor = "Top,Left,Right"
+$Form.Controls.Add($InfoPanel)
+
+$rowY = @(8,24,40,56,72,88)
+$keys = @("COMPUTER :","USER     :","WINDOWS  :","DOMAIN   :","NETWORK  :","UPTIME   :")
+$keyLbls=@(); $valLbls=@()
+for($i=0;$i -lt 6;$i++){
+    $kl=New-Lbl $InfoPanel $keys[$i] 8 $rowY[$i] 82 16 $txtMuted 8
+    $vl=New-Lbl $InfoPanel "" 92 $rowY[$i] 355 16 $txtLink 8
+    $vl.Cursor=[Windows.Forms.Cursors]::Hand
+    $keyLbls+=$kl; $valLbls+=$vl
+}
+$lblComputer=$valLbls[0]; $lblUser=$valLbls[1]
+$lblWindows=$valLbls[2];  $lblDomain=$valLbls[3]
+$lblNetwork=$valLbls[4];  $lblUptime=$valLbls[5]
+
+$RefBtn=New-Object Windows.Forms.Button
+$RefBtn.Text="Refresh"; $RefBtn.Location="390,85"; $RefBtn.Size="68,16"
+$RefBtn.FlatStyle="Flat"; $RefBtn.ForeColor=$txtMuted; $RefBtn.BackColor=$bgPanel
+$RefBtn.Font=New-Object Drawing.Font("Segoe UI",7)
+$RefBtn.FlatAppearance.BorderColor=$border; $RefBtn.FlatAppearance.BorderSize=1
+$InfoPanel.Controls.Add($RefBtn)
+
+function Make-Clickable($lbl) {
+    $lbl.Add_MouseEnter({ $lbl.ForeColor=$txtLinkHov; $lbl.Font=New-Object Drawing.Font("Consolas",8,[Drawing.FontStyle]::Underline) })
+    $lbl.Add_MouseLeave({ $lbl.ForeColor=$txtLink;    $lbl.Font=New-Object Drawing.Font("Consolas",8) })
+}
+Make-Clickable $lblComputer; Make-Clickable $lblUser
+Make-Clickable $lblWindows;  Make-Clickable $lblDomain
+Make-Clickable $lblNetwork;  Make-Clickable $lblUptime
+
+function Refresh-SystemInfo {
+    $cs=Get-CimInstance Win32_ComputerSystem
+    $os=Get-CimInstance Win32_OperatingSystem
+    $lblComputer.Text=$cs.Name
+    $lblUser.Text=$env:USERNAME
+    $lblWindows.Text="$($os.Caption) (Build $($os.BuildNumber))"
+    if($cs.PartOfDomain){
+        $lblDomain.Text="DOMAIN: $($cs.Domain)"
+        $lblDomain.ForeColor=[Drawing.Color]::FromArgb(112,184,168)
+    } else {
+        $lblDomain.Text="WORKGROUP: $($cs.Workgroup)"
+        $lblDomain.ForeColor=[Drawing.Color]::FromArgb(200,148,58)
+    }
+    $adapters=Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+              Where-Object {$_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*"}
+    if($adapters){
+        $online=Test-Connection -ComputerName "1.1.1.1" -Count 1 -Quiet -ErrorAction SilentlyContinue
+        $onlineStr=if($online){"  [ONLINE]"}else{"  [NO INTERNET]"}
+        $ipList=($adapters|ForEach-Object{$_.IPAddress}) -join "  /  "
+        $lblNetwork.Text="$ipList$onlineStr"
+        $lblNetwork.ForeColor=if($online){[Drawing.Color]::FromArgb(112,184,168)}else{[Drawing.Color]::FromArgb(200,112,112)}
+    } else {
+        $lblNetwork.Text="No network adapter found"
+        $lblNetwork.ForeColor=[Drawing.Color]::FromArgb(200,112,112)
+    }
+    $up=(Get-Date)-$os.LastBootUpTime
+    $lblUptime.Text="$([int]$up.TotalHours)h $($up.Minutes)m since last boot"
+}
+Refresh-SystemInfo
+$RefBtn.Add_Click({Refresh-SystemInfo})
+
+# ============================================================
 # CLICK: COMPUTER -> RENAME
 # ============================================================
 $lblComputer.Add_Click({
     $F=New-SubForm "Rename Computer" 380 185
-    New-SubLbl $F "Current: $($lblComputer.Text)" 15 12 340 18 $txtMuted 8 | Out-Null
-    New-SubLbl $F "New name (max 15 characters):" 15 35 340 18 $txtPrimary | Out-Null
-    $t=New-SubTxt $F 15 58 340
-    $t.Text=$lblComputer.Text; $t.SelectAll()
+    New-SubLbl $F "Current: $($lblComputer.Text)" 15 12 340 18 $txtMuted 8|Out-Null
+    New-SubLbl $F "New name (max 15 characters):" 15 35 340 18 $txtPrimary|Out-Null
+    $t=New-SubTxt $F 15 58 340; $t.Text=$lblComputer.Text; $t.SelectAll()
     $ok=New-SubBtn $F "Rename  (restart to apply)" 15 96 220 34 $btnBlue
     $cx=New-SubBtn $F "Cancel" 243 96 112 34 $btnDim
     $ok.Add_Click({
@@ -214,10 +209,10 @@ $lblComputer.Add_Click({
 # ============================================================
 $lblUser.Add_Click({
     $F=New-SubForm "Change Password" 380 240
-    New-SubLbl $F "Changing password for: $($env:USERNAME)" 15 12 340 18 $txtMuted 8 | Out-Null
-    New-SubLbl $F "New password:" 15 36 340 18 $txtPrimary | Out-Null
+    New-SubLbl $F "Changing password for: $($env:USERNAME)" 15 12 340 18 $txtMuted 8|Out-Null
+    New-SubLbl $F "New password:" 15 36 340 18 $txtPrimary|Out-Null
     $p1=New-SubTxt $F 15 56 340; $p1.UseSystemPasswordChar=$true
-    New-SubLbl $F "Confirm password:" 15 92 340 18 $txtPrimary | Out-Null
+    New-SubLbl $F "Confirm password:" 15 92 340 18 $txtPrimary|Out-Null
     $p2=New-SubTxt $F 15 112 340; $p2.UseSystemPasswordChar=$true
     $ok=New-SubBtn $F "Change Password" 15 152 210 34 $btnAmb
     $cx=New-SubBtn $F "Cancel" 233 152 112 34 $btnDim
@@ -238,8 +233,8 @@ $lblUser.Add_Click({
 # ============================================================
 $lblWindows.Add_Click({
     $F=New-SubForm "Windows Activation" 400 185
-    New-SubLbl $F "Product Key:" 15 12 360 18 $txtPrimary | Out-Null
-    New-SubLbl $F "Format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" 15 32 360 16 $txtMuted 8 | Out-Null
+    New-SubLbl $F "Product Key:" 15 12 360 18 $txtPrimary|Out-Null
+    New-SubLbl $F "Format: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" 15 32 360 16 $txtMuted 8|Out-Null
     $t=New-SubTxt $F 15 55 360
     $t.Font=New-Object Drawing.Font("Consolas",11); $t.CharacterCasing="Upper"
     # ===========================================================
@@ -255,9 +250,9 @@ $lblWindows.Add_Click({
         if($k -notmatch "^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$"){
             [Windows.Forms.MessageBox]::Show("Invalid key format.","Error");return}
         try{Write-ToUI "Installing product key..." "Cyan"
-            & cscript.exe "$env:SystemRoot\System32\slmgr.vbs" /ipk $k 2>&1 | Out-Null
+            & cscript.exe "$env:SystemRoot\System32\slmgr.vbs" /ipk $k 2>&1|Out-Null
             Write-ToUI "Activating with Microsoft..." "Cyan"
-            & cscript.exe "$env:SystemRoot\System32\slmgr.vbs" /ato 2>&1 | Out-Null
+            & cscript.exe "$env:SystemRoot\System32\slmgr.vbs" /ato 2>&1|Out-Null
             Write-ToUI "Activation complete." "Lime"
             [Windows.Forms.MessageBox]::Show("Key applied. Check Settings > Activation for status.","Done")
             $F.Close()
@@ -268,242 +263,147 @@ $lblWindows.Add_Click({
 })
 
 # ============================================================
-# CLICK: DOMAIN -> DOMAIN TOOLS
+# CLICK: DOMAIN -> DOMAIN TOOLS (label shortcut)
 # ============================================================
 $lblDomain.Add_Click({
-    $F=New-SubForm "Domain Manager" 380 230
-    New-SubLbl $F "Domain Name:" 15 15 340 18 $txtPrimary | Out-Null
-    $t=New-SubTxt $F 15 38 340
-    $jb=New-SubBtn $F "Join Domain  (will reboot)" 15 78 340 36 $btnTeal
-    $lb=New-SubBtn $F "Leave Domain  (return to WORKGROUP)" 15 122 340 36 $btnRed
-    $jb.Add_Click({
-        if([string]::IsNullOrWhiteSpace($t.Text)){[System.Media.SystemSounds]::Hand.Play();[Windows.Forms.MessageBox]::Show("Enter a domain name.","Error");return}
-        if([Windows.Forms.MessageBox]::Show("Join '$($t.Text)' and reboot?","Confirm","YesNo") -eq "Yes"){
-            try{Add-Computer -DomainName $t.Text -Restart -ErrorAction Stop}
-            catch{[Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)")}}
-    })
-    $lb.Add_Click({
-        if([Windows.Forms.MessageBox]::Show("Leave domain and reboot?","Confirm","YesNo") -eq "Yes"){
-            Remove-Computer -WorkgroupName "WORKGROUP" -Force -Restart}
-    })
-    $F.Controls.AddRange(@()) # already added via New-SubBtn
-    $F.ShowDialog(); Refresh-SystemInfo
+    # Reuse the same Domain Tools sub-form — defined as a function below
+    Show-DomainTools
 })
+
 # ============================================================
-# CLICK: NETWORK -> REFRESH SYSTEM INFO
+# CLICK: NETWORK -> FULL NETWORK MANAGER
 # ============================================================
 $lblNetwork.Add_Click({
-    $F = New-SubForm "Network Details" 480 100
+    $F=New-SubForm "Network Details" 480 100
+    $adapters=Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+              Where-Object {$_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*"}
+    $online=Test-Connection -ComputerName "1.1.1.1" -Count 1 -Quiet -ErrorAction SilentlyContinue
 
-    $adapters = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-                Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.*" }
-    $online = Test-Connection -ComputerName "1.1.1.1" -Count 1 -Quiet -ErrorAction SilentlyContinue
-
-    # Status banner
-    $banner = New-Object Windows.Forms.Panel
+    $banner=New-Object Windows.Forms.Panel
     $banner.Location="0,0"; $banner.Size="480,36"; $banner.BorderStyle="None"
-    $banner.BackColor = if($online){[Drawing.Color]::FromArgb(30,42,38)}else{[Drawing.Color]::FromArgb(42,28,28)}
+    $banner.BackColor=if($online){[Drawing.Color]::FromArgb(30,42,38)}else{[Drawing.Color]::FromArgb(42,28,28)}
     $F.Controls.Add($banner)
-
-    $bannerLbl = New-Object Windows.Forms.Label
-    $bannerLbl.Text = if($online){"  INTERNET CONNECTED"}else{"  NO INTERNET ACCESS"}
+    $bannerLbl=New-Object Windows.Forms.Label
+    $bannerLbl.Text=if($online){"  INTERNET CONNECTED"}else{"  NO INTERNET ACCESS"}
     $bannerLbl.Location="0,0"; $bannerLbl.Size="480,36"
-    $bannerLbl.ForeColor = if($online){[Drawing.Color]::FromArgb(112,184,168)}else{[Drawing.Color]::FromArgb(200,112,112)}
+    $bannerLbl.ForeColor=if($online){[Drawing.Color]::FromArgb(112,184,168)}else{[Drawing.Color]::FromArgb(200,112,112)}
     $bannerLbl.Font=New-Object Drawing.Font("Segoe UI",10,[Drawing.FontStyle]::Bold)
     $bannerLbl.TextAlign="MiddleLeft"; $bannerLbl.BackColor=[Drawing.Color]::Transparent
     $banner.Controls.Add($bannerLbl)
 
-    $script:ry = 52
+    $script:ry=52
 
-    # If no adapters, just show the "open settings" button
-    if(-not $adapters) {
-        $noNet = New-Object Windows.Forms.Label
+    if(-not $adapters){
+        $noNet=New-Object Windows.Forms.Label
         $noNet.Text="No network adapters found"; $noNet.Location="16,52"; $noNet.Size="440,20"
-        $noNet.ForeColor=[Drawing.Color]::FromArgb(200,112,112)
-        $noNet.Font=New-Object Drawing.Font("Segoe UI",9)
-        $F.Controls.Add($noNet)
-        $script:ry = 82
+        $noNet.ForeColor=[Drawing.Color]::FromArgb(200,112,112); $noNet.Font=New-Object Drawing.Font("Segoe UI",9)
+        $F.Controls.Add($noNet); $script:ry=82
     } else {
-        # Adapter selector dropdown
-        $adLbl = New-Object Windows.Forms.Label
+        $adLbl=New-Object Windows.Forms.Label
         $adLbl.Text="Adapter:"; $adLbl.Location="16,52"; $adLbl.Size="80,20"
-        $adLbl.ForeColor=[Drawing.Color]::FromArgb(80,80,100)
-        $adLbl.Font=New-Object Drawing.Font("Consolas",8)
+        $adLbl.ForeColor=[Drawing.Color]::FromArgb(80,80,100); $adLbl.Font=New-Object Drawing.Font("Consolas",8)
         $F.Controls.Add($adLbl)
+        $adCombo=New-Object Windows.Forms.ComboBox
+        $adCombo.Location="100,50"; $adCombo.Size="360,24"; $adCombo.DropDownStyle="DropDownList"
+        $adCombo.BackColor=$bgInput; $adCombo.ForeColor=$txtPrimary; $adCombo.Font=New-Object Drawing.Font("Consolas",9)
+        foreach($a in $adapters){$adCombo.Items.Add("$($a.InterfaceAlias)  —  $($a.IPAddress)")|Out-Null}
+        $adCombo.SelectedIndex=0; $F.Controls.Add($adCombo)
 
-        $adCombo = New-Object Windows.Forms.ComboBox
-        $adCombo.Location="100,50"; $adCombo.Size="360,24"
-        $adCombo.DropDownStyle="DropDownList"
-        $adCombo.BackColor=$bgInput; $adCombo.ForeColor=$txtPrimary
-        $adCombo.Font=New-Object Drawing.Font("Consolas",9)
-        foreach($a in $adapters){ $adCombo.Items.Add("$($a.InterfaceAlias)  —  $($a.IPAddress)") | Out-Null }
-        $adCombo.SelectedIndex=0
-        $F.Controls.Add($adCombo)
-
-        # Editable fields
-        $script:ry = 90
-
-        function Net-EditRow($key, $val, $readOnly=$false) {
+        $script:ry=90
+        function Net-EditRow($key,$val){
             $kl=New-Object Windows.Forms.Label
             $kl.Text=$key; $kl.Location="16,$($script:ry)"; $kl.Size="80,20"
-            $kl.ForeColor=[Drawing.Color]::FromArgb(80,80,100)
-            $kl.Font=New-Object Drawing.Font("Consolas",8)
+            $kl.ForeColor=[Drawing.Color]::FromArgb(80,80,100); $kl.Font=New-Object Drawing.Font("Consolas",8)
             $F.Controls.Add($kl)
-
             $tb=New-Object Windows.Forms.TextBox
             $tb.Location="100,$($script:ry)"; $tb.Size="360,24"
-            $tb.BackColor=$bgInput; $tb.ForeColor=$txtPrimary
-            $tb.Font=New-Object Drawing.Font("Consolas",9)
-            $tb.Text=$val; $tb.ReadOnly=$readOnly
-            $F.Controls.Add($tb)
-
-            $script:ry += 32
-            return $tb
+            $tb.BackColor=$bgInput; $tb.ForeColor=$txtPrimary; $tb.Font=New-Object Drawing.Font("Consolas",9)
+            $tb.Text=$val; $F.Controls.Add($tb); $script:ry+=32; return $tb
         }
 
-        # Get current adapter details
-        $curAdapter = $adapters[0]
-        $curIface   = $curAdapter.InterfaceAlias
-        $curIP      = $curAdapter.IPAddress
-        $curPrefix  = $curAdapter.PrefixLength
+        $curAdapter=$adapters[0]; $curIface=$curAdapter.InterfaceAlias
+        $gw=(Get-NetRoute -InterfaceAlias $curIface -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue|Select-Object -First 1).NextHop
+        $dns=(Get-DnsClientServerAddress -InterfaceAlias $curIface -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses -join ", "
 
-        $gw  = (Get-NetRoute -InterfaceAlias $curIface -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
-                Select-Object -First 1).NextHop
-        $dns = (Get-DnsClientServerAddress -InterfaceAlias $curIface -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses -join ", "
+        $txtIP     =Net-EditRow "IP Address :" $curAdapter.IPAddress
+        $txtPrefix =Net-EditRow "Subnet (/):" $curAdapter.PrefixLength
+        $txtGW     =Net-EditRow "Gateway   :" $(if($gw){$gw}else{"n/a"})
+        $txtDNS    =Net-EditRow "DNS       :" $(if($dns){$dns}else{"n/a"})
 
-        # Create the editable fields
-        $txtIP      = Net-EditRow "IP Address :" $curIP
-        $txtPrefix  = Net-EditRow "Subnet (/):" $curPrefix
-        $txtGW      = Net-EditRow "Gateway   :" $(if($gw){$gw}else{"n/a"})
-        $txtDNS     = Net-EditRow "DNS       :" $(if($dns){$dns}else{"n/a"})
-
-        # When adapter selection changes, reload the fields
         $adCombo.Add_SelectedIndexChanged({
-            $selAdapter = $adapters[$adCombo.SelectedIndex]
-            $selIface   = $selAdapter.InterfaceAlias
-            $txtIP.Text     = $selAdapter.IPAddress
-            $txtPrefix.Text = $selAdapter.PrefixLength
-            $gw2  = (Get-NetRoute -InterfaceAlias $selIface -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
-                     Select-Object -First 1).NextHop
-            $dns2 = (Get-DnsClientServerAddress -InterfaceAlias $selIface -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses -join ", "
-            $txtGW.Text  = if($gw2){$gw2}else{"n/a"}
-            $txtDNS.Text = if($dns2){$dns2}else{"n/a"}
+            $sel=$adapters[$adCombo.SelectedIndex]; $si=$sel.InterfaceAlias
+            $txtIP.Text=$sel.IPAddress; $txtPrefix.Text=$sel.PrefixLength
+            $gw2=(Get-NetRoute -InterfaceAlias $si -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue|Select-Object -First 1).NextHop
+            $dns2=(Get-DnsClientServerAddress -InterfaceAlias $si -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses -join ", "
+            $txtGW.Text=if($gw2){$gw2}else{"n/a"}; $txtDNS.Text=if($dns2){$dns2}else{"n/a"}
         })
 
-        $script:ry += 10
-
-        # Apply Static IP button
-        $btnApply = New-Object Windows.Forms.Button
-        $btnApply.Text="Apply Static IP + DNS"
-        $btnApply.Location="16,$($script:ry)"; $btnApply.Size="190,34"
+        $script:ry+=10
+        $btnApply=New-Object Windows.Forms.Button
+        $btnApply.Text="Apply Static IP + DNS"; $btnApply.Location="16,$($script:ry)"; $btnApply.Size="190,34"
         $btnApply.FlatStyle="Flat"; $btnApply.ForeColor=$btnTeal[1]; $btnApply.BackColor=$btnTeal[0]
         $btnApply.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
         $btnApply.FlatAppearance.BorderColor=$border; $btnApply.FlatAppearance.BorderSize=1
         $btnApply.Add_Click({
-            $selAdapter = $adapters[$adCombo.SelectedIndex]
-            $selIface   = $selAdapter.InterfaceAlias
-            $selIfIndex = $selAdapter.InterfaceIndex
-
-            $newIP     = $txtIP.Text.Trim()
-            $newPrefix = $txtPrefix.Text.Trim()
-            $newGW     = $txtGW.Text.Trim()
-            $newDNS    = $txtDNS.Text.Trim() -split "[,\s]+" | Where-Object {$_}
-
-            if([string]::IsNullOrWhiteSpace($newIP) -or [string]::IsNullOrWhiteSpace($newPrefix)){
-                [Windows.Forms.MessageBox]::Show("IP and Subnet cannot be empty.","Error"); return}
-
-            $confirm = [Windows.Forms.MessageBox]::Show(
-                "Apply static IP to $selIface ?`n`nIP: $newIP/$newPrefix`nGW: $newGW`nDNS: $($newDNS -join ', ')",
-                "Confirm Static IP","YesNo")
-            if($confirm -ne "Yes"){return}
-
-            try {
-                Write-ToUI "Setting static IP on $selIface..." "Cyan"
-                # Remove existing IP config
-                Remove-NetIPAddress -InterfaceAlias $selIface -Confirm:$false -ErrorAction SilentlyContinue
-                Remove-NetRoute -InterfaceAlias $selIface -Confirm:$false -ErrorAction SilentlyContinue
-
-                # Apply new IP
-                New-NetIPAddress -InterfaceAlias $selIface -IPAddress $newIP -PrefixLength $newPrefix `
-                    -DefaultGateway $(if($newGW -ne "n/a"){$newGW}else{$null}) -ErrorAction Stop | Out-Null
-
-                # Apply DNS
-                if($newDNS.Count -gt 0){
-                    Set-DnsClientServerAddress -InterfaceAlias $selIface -ServerAddresses $newDNS -ErrorAction Stop
-                }
-
-                Write-ToUI "Static IP applied: $newIP/$newPrefix" "Lime"
-                [Windows.Forms.MessageBox]::Show("Static IP applied successfully!","Done")
-                $F.Close()
-                Refresh-SystemInfo
-
-            } catch {
-                Write-ToUI "Static IP failed: $($_.Exception.Message)" "Orange"
-                [Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")
-            }
+            $sel=$adapters[$adCombo.SelectedIndex]; $si=$sel.InterfaceAlias
+            $newIP=$txtIP.Text.Trim(); $newPfx=$txtPrefix.Text.Trim()
+            $newGW=$txtGW.Text.Trim()
+            $newDNS=$txtDNS.Text.Trim() -split "[,\s]+" | Where-Object{$_}
+            if([string]::IsNullOrWhiteSpace($newIP)-or[string]::IsNullOrWhiteSpace($newPfx)){
+                [Windows.Forms.MessageBox]::Show("IP and Subnet cannot be empty.","Error");return}
+            if([Windows.Forms.MessageBox]::Show("Apply static IP to $si ?`n`nIP: $newIP/$newPfx`nGW: $newGW`nDNS: $($newDNS -join ', ')","Confirm Static IP","YesNo") -ne "Yes"){return}
+            try{
+                Write-ToUI "Setting static IP on $si..." "Cyan"
+                Remove-NetIPAddress -InterfaceAlias $si -Confirm:$false -ErrorAction SilentlyContinue
+                Remove-NetRoute -InterfaceAlias $si -Confirm:$false -ErrorAction SilentlyContinue
+                New-NetIPAddress -InterfaceAlias $si -IPAddress $newIP -PrefixLength $newPfx `
+                    -DefaultGateway $(if($newGW -ne "n/a"){$newGW}else{$null}) -ErrorAction Stop|Out-Null
+                if($newDNS.Count-gt 0){Set-DnsClientServerAddress -InterfaceAlias $si -ServerAddresses $newDNS -ErrorAction Stop}
+                Write-ToUI "Static IP applied: $newIP/$newPfx" "Lime"
+                [Windows.Forms.MessageBox]::Show("Static IP applied!","Done"); $F.Close(); Refresh-SystemInfo
+            }catch{Write-ToUI "Static IP failed: $($_.Exception.Message)" "Orange"
+                   [Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")}
         })
         $F.Controls.Add($btnApply)
 
-        # DHCP button
-        $btnDHCP = New-Object Windows.Forms.Button
-        $btnDHCP.Text="Switch to DHCP"
-        $btnDHCP.Location="214,$($script:ry)"; $btnDHCP.Size="140,34"
+        $btnDHCP=New-Object Windows.Forms.Button
+        $btnDHCP.Text="Switch to DHCP"; $btnDHCP.Location="214,$($script:ry)"; $btnDHCP.Size="140,34"
         $btnDHCP.FlatStyle="Flat"; $btnDHCP.ForeColor=$btnAmb[1]; $btnDHCP.BackColor=$btnAmb[0]
         $btnDHCP.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
         $btnDHCP.FlatAppearance.BorderColor=$border; $btnDHCP.FlatAppearance.BorderSize=1
         $btnDHCP.Add_Click({
-            $selAdapter = $adapters[$adCombo.SelectedIndex]
-            $selIface   = $selAdapter.InterfaceAlias
-
-            $confirm = [Windows.Forms.MessageBox]::Show(
-                "Switch $selIface to DHCP (automatic)?",
-                "Confirm DHCP","YesNo")
-            if($confirm -ne "Yes"){return}
-
-            try {
-                Write-ToUI "Switching $selIface to DHCP..." "Cyan"
-                Set-NetIPInterface -InterfaceAlias $selIface -Dhcp Enabled -ErrorAction Stop
-                Set-DnsClientServerAddress -InterfaceAlias $selIface -ResetServerAddresses -ErrorAction Stop
-                Write-ToUI "$selIface now using DHCP." "Lime"
-                [Windows.Forms.MessageBox]::Show("Switched to DHCP successfully!","Done")
-                $F.Close()
-                Refresh-SystemInfo
-            } catch {
-                Write-ToUI "DHCP switch failed: $($_.Exception.Message)" "Orange"
-                [Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")
-            }
+            $sel=$adapters[$adCombo.SelectedIndex]; $si=$sel.InterfaceAlias
+            if([Windows.Forms.MessageBox]::Show("Switch $si to DHCP?","Confirm DHCP","YesNo") -ne "Yes"){return}
+            try{Write-ToUI "Switching $si to DHCP..." "Cyan"
+                Set-NetIPInterface -InterfaceAlias $si -Dhcp Enabled -ErrorAction Stop
+                Set-DnsClientServerAddress -InterfaceAlias $si -ResetServerAddresses -ErrorAction Stop
+                Write-ToUI "$si now using DHCP." "Lime"
+                [Windows.Forms.MessageBox]::Show("Switched to DHCP!","Done"); $F.Close(); Refresh-SystemInfo
+            }catch{Write-ToUI "DHCP switch failed: $($_.Exception.Message)" "Orange"
+                   [Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")}
         })
         $F.Controls.Add($btnDHCP)
-
-        $script:ry += 42
+        $script:ry+=42
     }
 
-    # Open Adapter Settings button — always present
-    $btnSettings = New-Object Windows.Forms.Button
-    $btnSettings.Text="Open Network Connections"
-    $btnSettings.Location="16,$($script:ry)"; $btnSettings.Size="210,32"
+    $btnSettings=New-Object Windows.Forms.Button
+    $btnSettings.Text="Open Network Connections"; $btnSettings.Location="16,$($script:ry)"; $btnSettings.Size="210,32"
     $btnSettings.FlatStyle="Flat"; $btnSettings.ForeColor=$btnBlue[1]; $btnSettings.BackColor=$btnBlue[0]
     $btnSettings.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
     $btnSettings.FlatAppearance.BorderColor=$border; $btnSettings.FlatAppearance.BorderSize=1
-    $btnSettings.Add_Click({
-        Start-Process "ncpa.cpl"
-        $F.Close()
-    })
+    $btnSettings.Add_Click({Start-Process "ncpa.cpl"; $F.Close()})
     $F.Controls.Add($btnSettings)
-
-    # Close button
-    $btnClose = New-SubBtn $F "Close" 234 $($script:ry) 90 32 $btnDim
+    $btnClose=New-SubBtn $F "Close" 234 $($script:ry) 90 32 $btnDim
     $btnClose.Add_Click({$F.Close()})
-
-    $F.Size="480,$($script:ry + 80)"
-    $F.ShowDialog()
+    $F.Size="480,$($script:ry+80)"; $F.ShowDialog()
 })
+
 # ============================================================
 # CLICK: UPTIME -> POWER OPTIONS
 # ============================================================
 $lblUptime.Add_Click({
     $F=New-SubForm "Power Options" 310 172
-    New-SubLbl $F "What would you like to do?" 15 14 270 20 $txtPrimary 10 | Out-Null
+    New-SubLbl $F "What would you like to do?" 15 14 270 20 $txtPrimary 10|Out-Null
     $rb=New-SubBtn $F "Restart Now" 15 46 265 36 $btnAmb
     $sb=New-SubBtn $F "Shut Down Now" 15 90 265 36 $btnRed
     $rb.Add_Click({if([Windows.Forms.MessageBox]::Show("Restart now?","Confirm","YesNo") -eq "Yes"){Restart-Computer -Force}})
@@ -512,23 +412,188 @@ $lblUptime.Add_Click({
 })
 
 # ============================================================
+# DOMAIN TOOLS — shared function (used by label click AND button)
+# ============================================================
+function Show-DomainTools {
+    $F=New-SubForm "Domain Tools" 500 520
+    $cs=Get-CimInstance Win32_ComputerSystem
+
+    # Status banner
+    $banner=New-Object Windows.Forms.Panel
+    $banner.Location="0,0"; $banner.Size="500,36"; $banner.BorderStyle="None"
+    $banner.BackColor=if($cs.PartOfDomain){[Drawing.Color]::FromArgb(30,42,38)}else{[Drawing.Color]::FromArgb(42,35,24)}
+    $F.Controls.Add($banner)
+    $bannerLbl=New-Object Windows.Forms.Label
+    $bannerLbl.Text=if($cs.PartOfDomain){"  DOMAIN JOINED: $($cs.Domain)"}else{"  WORKGROUP: $($cs.Workgroup)  (not domain joined)"}
+    $bannerLbl.Location="0,0"; $bannerLbl.Size="500,36"
+    $bannerLbl.ForeColor=if($cs.PartOfDomain){[Drawing.Color]::FromArgb(112,184,168)}else{[Drawing.Color]::FromArgb(200,148,58)}
+    $bannerLbl.Font=New-Object Drawing.Font("Segoe UI",10,[Drawing.FontStyle]::Bold)
+    $bannerLbl.TextAlign="MiddleLeft"; $bannerLbl.BackColor=[Drawing.Color]::Transparent
+    $banner.Controls.Add($bannerLbl)
+
+    $fy=46
+
+    # ---- Section: Join / Leave ----
+    $s1=New-Object Windows.Forms.Label; $s1.Text="JOIN / LEAVE"
+    $s1.Location="15,$fy"; $s1.Size="460,14"; $s1.ForeColor=$txtMuted
+    $s1.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold); $F.Controls.Add($s1); $fy+=18
+
+    New-SubLbl $F "Domain Name:" 15 $fy 460 18 $txtPrimary|Out-Null; $fy+=20
+    $tDomain=New-SubTxt $F 15 $fy 460; $fy+=32
+
+    $btnJoin=New-SubBtn $F "Join Domain  (will reboot)" 15 $fy 220 34 $btnTeal
+    $btnJoin.Add_Click({
+        if([string]::IsNullOrWhiteSpace($tDomain.Text)){[Windows.Forms.MessageBox]::Show("Enter a domain name.","Error");return}
+        if([Windows.Forms.MessageBox]::Show("Join '$($tDomain.Text)' and reboot?","Confirm","YesNo") -eq "Yes"){
+            try{Add-Computer -DomainName $tDomain.Text -Restart -ErrorAction Stop}
+            catch{[Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)")}}
+    })
+
+    $btnLeave=New-SubBtn $F "Leave Domain  (reboot)" 243 $fy 232 34 $btnRed
+    $btnLeave.Add_Click({
+        if([Windows.Forms.MessageBox]::Show("Leave domain and reboot?","Confirm","YesNo") -eq "Yes"){
+            Remove-Computer -WorkgroupName "WORKGROUP" -Force -Restart}
+    })
+    $fy+=46
+
+    # ---- Section: GP Report ----
+    $s2=New-Object Windows.Forms.Label; $s2.Text="GROUP POLICY"
+    $s2.Location="15,$fy"; $s2.Size="460,14"; $s2.ForeColor=$txtMuted
+    $s2.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold); $F.Controls.Add($s2); $fy+=18
+
+    $btnGP=New-SubBtn $F "Generate GP Report  (saves to Desktop)" 15 $fy 460 34 $btnBlue
+    $btnGP.Add_Click({
+        Write-ToUI "Generating Group Policy report..." "Cyan"
+        $gpPath="$env:USERPROFILE\Desktop\gpreport.html"
+        try{
+            gpresult /H $gpPath /F 2>&1|Out-Null
+            if(Test-Path $gpPath){
+                Write-ToUI "GP report saved to Desktop." "Lime"
+                Start-Process $gpPath
+            } else {
+                Write-ToUI "GP report failed — machine may not be domain joined." "Orange"
+                [Windows.Forms.MessageBox]::Show("GP report failed.`n`nThis machine may not be on a domain.","Error")
+            }
+        }catch{Write-ToUI "GP report error: $($_.Exception.Message)" "Orange"}
+    })
+    $fy+=46
+
+    $btnGPUpdate=New-SubBtn $F "Force Group Policy Update  (gpupdate /force)" 15 $fy 460 34 $btnBlue
+    $btnGPUpdate.Add_Click({
+        Write-ToUI "Running gpupdate /force..." "Cyan"
+        $F.Enabled=$false
+        gpupdate /force 2>&1|Out-Null
+        $F.Enabled=$true
+        Write-ToUI "Group Policy update complete." "Lime"
+        [Windows.Forms.MessageBox]::Show("gpupdate /force complete.","Done")
+    })
+    $fy+=46
+
+    # ---- Section: DNS Flush / Re-register ----
+    $s3=New-Object Windows.Forms.Label; $s3.Text="DNS / REGISTRATION"
+    $s3.Location="15,$fy"; $s3.Size="460,14"; $s3.ForeColor=$txtMuted
+    $s3.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold); $F.Controls.Add($s3); $fy+=18
+
+    $btnDNS=New-SubBtn $F "Flush DNS + Re-register in Domain" 15 $fy 460 34 $btnTeal
+    $btnDNS.Add_Click({
+        Write-ToUI "Flushing DNS cache..." "Cyan"
+        ipconfig /flushdns 2>&1|Out-Null
+        Write-ToUI "Re-registering DNS..." "Cyan"
+        ipconfig /registerdns 2>&1|Out-Null
+        Write-ToUI "DNS flush and re-registration complete." "Lime"
+        [Windows.Forms.MessageBox]::Show("DNS flushed and re-registered.","Done")
+    })
+    $fy+=46
+
+    # ---- Section: Managed / Federated toggle ----
+    $s4=New-Object Windows.Forms.Label; $s4.Text="AZURE AD / HYBRID JOIN"
+    $s4.Location="15,$fy"; $s4.Size="460,14"; $s4.ForeColor=$txtMuted
+    $s4.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold); $F.Controls.Add($s4); $fy+=18
+
+    # Show current Azure AD join status
+    $dsregRaw=& dsregcmd /status 2>&1
+    $azureJoined  =($dsregRaw|Select-String "AzureAdJoined\s*:\s*YES") -ne $null
+    $domainJoined =($dsregRaw|Select-String "DomainJoined\s*:\s*YES") -ne $null
+    $hybridJoined =$azureJoined -and $domainJoined
+
+    $statusText = if($hybridJoined){"Hybrid Join (AD + Azure AD)"}
+                  elseif($azureJoined){"Azure AD Joined only"}
+                  elseif($domainJoined){"On-premises AD only"}
+                  else{"Not joined to any directory"}
+
+    $statusLbl=New-Object Windows.Forms.Label
+    $statusLbl.Text="Current join status: $statusText"
+    $statusLbl.Location="15,$fy"; $statusLbl.Size="460,18"
+    $statusLbl.ForeColor=[Drawing.Color]::FromArgb(200,148,58)
+    $statusLbl.Font=New-Object Drawing.Font("Segoe UI",8)
+    $F.Controls.Add($statusLbl); $fy+=26
+
+    $btnDsreg=New-SubBtn $F "Open dsregcmd Status  (full output)" 15 $fy 220 34 $btnAmb
+    $btnDsreg.Add_Click({
+        $output=& dsregcmd /status 2>&1 | Out-String
+        $tmpFile="$env:TEMP\dsregcmd-status.txt"
+        $output|Out-File $tmpFile -Encoding UTF8
+        Start-Process "notepad.exe" $tmpFile
+    })
+
+    $btnAADLeave=New-SubBtn $F "Leave Azure AD Join" 243 $fy 232 34 $btnRed
+    $btnAADLeave.Add_Click({
+        $confirm=[Windows.Forms.MessageBox]::Show(
+            "This will remove the Azure AD join.`n`nThe machine will need to be re-enrolled or re-joined.`n`nContinue?",
+            "Confirm Azure AD Leave","YesNo")
+        if($confirm -ne "Yes"){return}
+        try{
+            Write-ToUI "Leaving Azure AD join..." "Yellow"
+            & dsregcmd /leave 2>&1|Out-Null
+            Write-ToUI "Azure AD leave command sent. Restart to complete." "Lime"
+            [Windows.Forms.MessageBox]::Show("Azure AD leave sent.`n`nRestart required.","Done")
+        }catch{[Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")}
+    })
+    $fy+=46
+
+    # ---- Section: Misc ----
+    $s5=New-Object Windows.Forms.Label; $s5.Text="MISC"
+    $s5.Location="15,$fy"; $s5.Size="460,14"; $s5.ForeColor=$txtMuted
+    $s5.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold); $F.Controls.Add($s5); $fy+=18
+
+    $btnRSAT=New-SubBtn $F "Open Active Directory Users & Computers" 15 $fy 460 34 $btnBlue
+    $btnRSAT.Add_Click({
+        try{Start-Process "dsa.msc" -ErrorAction Stop}
+        catch{[Windows.Forms.MessageBox]::Show("ADUC not available.`n`nRSAT tools may not be installed on this machine.","Not Found")}
+    })
+    $fy+=46
+
+    $btnClose=New-SubBtn $F "Close" 15 $fy 100 30 $btnDim
+    $btnClose.Add_Click({$F.Close()})
+
+    $F.Size="500,$($fy+60)"
+    $F.ShowDialog()
+    Refresh-SystemInfo
+}
+
+# ============================================================
 # OUTPUT CONSOLE
 # ============================================================
-$consLbl = New-Object Windows.Forms.Label
-$consLbl.Text="OUTPUT LOG"; $consLbl.Location="12,455"; $consLbl.Size="200,13"
-$consLbl.ForeColor=$txtMuted; $consLbl.BackColor=[Drawing.Color]::Transparent
-$consLbl.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold)
-$Form.Controls.Add($consLbl)
+# Remove the consLbl and ExitBtn entirely — delete these blocks:
+# $consLbl = New-Object Windows.Forms.Label ... (delete all of it)
+# $ExitBtn = New-Object Windows.Forms.Button ... (delete all of it)
+# $Form.Controls.Add($consLbl)
+# $Form.Controls.Add($ExitBtn)
 
+# Replace ConsoleOutput definition with this:
 $ConsoleOutput = New-Object Windows.Forms.RichTextBox
-$ConsoleOutput.Location="12,475"; $ConsoleOutput.Size="470,218"
-$ConsoleOutput.BackColor=$bgConsole; $ConsoleOutput.ForeColor=$txtConsole
-$ConsoleOutput.ReadOnly=$true; $ConsoleOutput.BorderStyle="None"
-$ConsoleOutput.Font=New-Object Drawing.Font("Consolas",8)
-$ConsoleOutput.Anchor="Top,Left,Right,Bottom"
+$ConsoleOutput.Location = "10,490"
+$ConsoleOutput.Size = "470,260"
+$ConsoleOutput.BackColor = $bgConsole
+$ConsoleOutput.ForeColor = $txtConsole
+$ConsoleOutput.ReadOnly = $true
+$ConsoleOutput.BorderStyle = "None"
+$ConsoleOutput.Font = New-Object Drawing.Font("Consolas", 8)
+$ConsoleOutput.Anchor = "Top,Left,Right,Bottom"
+$ConsoleOutput.ScrollBars = "Vertical"
 $Form.Controls.Add($ConsoleOutput)
 
-function Write-ToUI($msg, $col="Lime") {
+function Write-ToUI($msg,$col="Lime"){
     $ConsoleOutput.SelectionStart=$ConsoleOutput.TextLength
     $ConsoleOutput.SelectionLength=0
     $ConsoleOutput.SelectionColor=[System.Drawing.Color]::$col
@@ -536,10 +601,11 @@ function Write-ToUI($msg, $col="Lime") {
     $ConsoleOutput.ScrollToCaret()
     $Form.Refresh()
 }
+
 # ============================================================
-# STARTUP BANNER — edit the $bannerLines array to customise
+# STARTUP BANNER
 # ============================================================
-$bannerLines = @(
+$bannerLines=@(
     " ",
     "  ╔══════════════════════════════════════╗",
     "  ║      WRAYNET WINDOWS UTILITY         ║",
@@ -548,17 +614,20 @@ $bannerLines = @(
     " ",
     "  CHANGELOG",
     "  ─────────────────────────────────────────────────────",
-    "  v1.2 — $(Get-Date -Format 'dd MMM yyyy')",
-    "  + Added Hardware diagnostics",
-    "  + Refactored UI spacing and grouping",
+    "  v2.0 — $(Get-Date -Format 'dd MMM yyyy')",
+    "  + Vendor Purge — auto-detects HP/Dell/Lenovo/Acer/ASUS",
+    "  + Domain Tools — GP report, gpupdate, DNS flush,",
+    "    Azure AD status, ADUC launcher",
+    "  + DPI-aware resizable window",
+    "  + Anchored controls scale with window resize",
     " ",
     "  QUICK REFERENCE",
     "  ─────────────────────────────────────────────────────",
     "  Click COMPUTER  : Rename machine",
     "  Click USER      : Change password",
     "  Click WINDOWS   : Product activation",
-    "  Click DOMAIN    : Join/Leave domain",
-    "  Click NETWORK   : Edit IP settings",
+    "  Click DOMAIN    : Domain tools",
+    "  Click NETWORK   : Edit IP / DNS settings",
     "  Click UPTIME    : Power options",
     " ",
     "  COMMANDS",
@@ -568,6 +637,7 @@ $bannerLines = @(
     "  > VENDOR PURGE    — Remove vendor bloat",
     "  > APPLICATIONS    — Software installer",
     "  > USER ACCOUNTS   — Create admin/users",
+    "  > DOMAIN TOOLS    — GP, DNS, Azure AD",
     "  > DIAGNOSTICS     — Hardware health",
     " ",
     "  ─────────────────────────────────────────────────────",
@@ -575,61 +645,67 @@ $bannerLines = @(
     " "
 )
 
-# Scroll each line in with a short delay so it feels alive
-$bannerTimer = New-Object Windows.Forms.Timer
-$bannerTimer.Interval = 18   # ms between lines — lower = faster scroll
-$bannerIndex = 0
+$bannerTimer=New-Object Windows.Forms.Timer
+$bannerTimer.Interval=18
 $bannerTimer.Add_Tick({
-    if($bannerIndex -lt $bannerLines.Count) {
-        $line = $bannerLines[$bannerIndex]
-        
-        # Determine color by simple content matching
-        if($bannerIndex -ge 1 -and $bannerIndex -le 4) {
-            $lineColor = "Cyan"
-        } elseif($line -match "CHANGELOG|QUICK REFERENCE|COMMANDS") {
-            $lineColor = "White"
-        } elseif($line -match ">") {
-            $lineColor = "Yellow"
-        } elseif($line -match "READY") {
-            $lineColor = "Lime"
-        } else {
-            $lineColor = "Gray"
-        }
-
-        Write-ToUI $line $lineColor
+    if($bannerIndex -lt $bannerLines.Count){
+        $line=$bannerLines[$bannerIndex]
+        if($bannerIndex -ge 1 -and $bannerIndex -le 4){$lc="Cyan"}
+        elseif($line -match "CHANGELOG|QUICK REFERENCE|COMMANDS"){$lc="White"}
+        elseif($line -match "^\s{2}\+"){$lc="Gray"}
+        elseif($line -match ">"){$lc="Yellow"}
+        elseif($line -match "READY"){$lc="Lime"}
+        else{$lc="Gray"}
+        Write-ToUI $line $lc
         $script:bannerIndex++
-    } else {
-        $bannerTimer.Stop()
-    }
+    } else {$bannerTimer.Stop()}
 })
-$script:bannerIndex = 0
+$script:bannerIndex=0
 $bannerTimer.Start()
+
 # ============================================================
 # MAIN BUTTONS
 # ============================================================
-$bAll = New-Object Windows.Forms.Button
-$bAll.Text="  TOTAL DEPLOY - Full Provision"
+$bAll=New-Object Windows.Forms.Button
+$bAll.Text="  TOTAL DEPLOY — Full Provision"
 $bAll.Location="10,125"; $bAll.Size="470,38"
 $bAll.FlatStyle="Flat"; $bAll.ForeColor=$btnRun[1]; $bAll.BackColor=$btnRun[0]
 $bAll.Font=New-Object Drawing.Font("Segoe UI",10,[Drawing.FontStyle]::Bold)
 $bAll.FlatAppearance.BorderColor=$border; $bAll.FlatAppearance.BorderSize=1
 $bAll.TextAlign="MiddleLeft"; $bAll.Padding=New-Object Windows.Forms.Padding(10,0,0,0)
+$bAll.Anchor="Top,Left,Right"
 $Form.Controls.Add($bAll)
 
-# --- SYSTEM CLEANUP  ---
-New-SectionLbl "SYSTEM CLEANUP" 175
-$b1 = New-Btn $Form "  SYSTEM SANITIZE -- Debloat + Essential Tweaks" 10 192 470 36 $btnRed
-# Moved from Configuration to Cleanup
-$b2 = New-Btn $Form "  VENDOR PURGE -- Debloat vendor applications"    10 234 470 36 $btnAmb 
+New-SectionLbl "SYSTEM CLEANUP" 172
+$b1=New-Btn $Form "  SYSTEM SANITIZE — Debloat + Essential Tweaks" 10 188 470 36 $btnRed
+$b2=New-Btn $Form "  VENDOR PURGE — Auto-detect + Remove Vendor Bloat" 10 230 470 36 $btnAmb
 
-# --- CONFIGURATION  ---
-New-SectionLbl "CONFIGURATION" 285 
-$b3 = New-Btn $Form "  APPLICATION PROVISIONING" 10 302 470 36 $btnBlue
-$b4 = New-Btn $Form "  USER PROVISIONING"      10 344 470 36 $btnRun
+New-SectionLbl "CONFIGURATION" 275
+$b3=New-Btn $Form "  APPLICATION PROVISIONING" 10 291 470 36 $btnBlue
+$b4=New-Btn $Form "  USER PROVISIONING"        10 333 470 36 $btnRun
 
-# --- HARDWARE  ---
-New-SectionLbl "HARDWARE" 395 
-$b5 = New-Btn $Form "SYSTEM DIAGNOSTICS" 10 412 470 36 $btnAmb
+New-SectionLbl "DOMAIN + HARDWARE" 378
+$b5=New-Btn $Form "  DOMAIN TOOLS"             10 394 470 36 $btnTeal
+$b6=New-Btn $Form "  SYSTEM DIAGNOSTICS"       10 436 470 36 $btnAmb
+
+$ExitBtn=New-Object Windows.Forms.Button
+$ExitBtn.Text="CLOSE"; $ExitBtn.Location="10,755"; $ExitBtn.Size="470,24"
+$ExitBtn.FlatStyle="Flat"; $ExitBtn.BackColor=$bgPanel; $ExitBtn.ForeColor=$txtMuted
+$ExitBtn.Font=New-Object Drawing.Font("Segoe UI",8)
+$ExitBtn.FlatAppearance.BorderColor=$border; $ExitBtn.FlatAppearance.BorderSize=1
+$ExitBtn.Anchor="Bottom,Left,Right"
+$ExitBtn.Add_Click({$Form.Close()})
+$Form.Controls.Add($ExitBtn)
+
+# Resize handler — keeps everything snapped
+$Form.Add_Resize({
+    $w=$Form.ClientSize.Width-20
+    $InfoPanel.Width=$w
+    foreach($btn in @($bAll,$b1,$b2,$b3,$b4,$b5,$b6)){$btn.Width=$w}
+    $consLbl.Width=$w
+    $ConsoleOutput.Width=$w
+    $ExitBtn.Width=$w
+})
 
 # ============================================================
 # LOGIC FUNCTIONS
@@ -640,14 +716,14 @@ function Run-Debloat {
             "*MicrosoftNews*","*BingWeather*","*GetHelp*","*FeedbackHub*",
             "*WindowsMaps*","*YourPhone*","*MicrosoftToDo*","*MicrosoftOfficeHub*",
             "*People*","*ZuneMusic*","*ZuneVideo*","Microsoft.Messaging","Microsoft.OneConnect")
-    foreach ($app in $apps) {
+    foreach($app in $apps){
         Write-ToUI "Checking: $app"
-        Get-AppxPackage -AllUsers -Name $app -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-AppxPackage -AllUsers -Name $app -ErrorAction SilentlyContinue|ForEach-Object{
             Write-ToUI "  Removing: $($_.Name)" "Orange"
             Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue
         }
-        Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
-            Where-Object {$_.DisplayName -like $app} | ForEach-Object {
+        Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue|
+            Where-Object{$_.DisplayName -like $app}|ForEach-Object{
                 Write-ToUI "  Removing provisioned: $($_.DisplayName)" "Orange"
                 Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue
             }
@@ -664,15 +740,12 @@ function Run-Debloat {
 
 function Run-EssentialTweaks {
     Write-ToUI "Applying essential tweaks..." "Cyan"
-
-# Privacy & telemetry
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -ErrorAction SilentlyContinue
+    Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0 -ErrorAction SilentlyContinue
     Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
     $ads="HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
     "SubscribedContent-310093Enabled","SubscribedContent-353696Enabled",
-    "RotatingLockScreenOverlayEnabled","SubscribedContent-338387Enabled" | ForEach-Object {
-        Set-ItemProperty -Path $ads -Name $_ -Value 0 -ErrorAction SilentlyContinue
-    }
+    "RotatingLockScreenOverlayEnabled","SubscribedContent-338387Enabled"|ForEach-Object{
+        Set-ItemProperty -Path $ads -Name $_ -Value 0 -ErrorAction SilentlyContinue}
     Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0 -ErrorAction SilentlyContinue
     Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Feeds" "ShellFeedsTaskbarViewMode" 2 -ErrorAction SilentlyContinue
     Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "PeopleBand" 0 -ErrorAction SilentlyContinue
@@ -684,60 +757,33 @@ function Run-EssentialTweaks {
     Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" "ActiveHoursStart" 8  -ErrorAction SilentlyContinue
     Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" "ActiveHoursEnd"   17 -ErrorAction SilentlyContinue
     Write-ToUI "Privacy and performance done."
-
-# Set timezone to New Zealand Standard Time
     Write-ToUI "Setting timezone to NZ Standard Time..."
-    try {
-        Set-TimeZone -Id "New Zealand Standard Time" -ErrorAction Stop
-        Write-ToUI "Timezone set to NZ." "Lime"
-    } catch {
-        Write-ToUI "Timezone change failed — set manually if needed." "Orange"
-    }
-
-# Show file extensions
-    Write-ToUI "Showing file extensions..."
+    try{Set-TimeZone -Id "New Zealand Standard Time" -ErrorAction Stop; Write-ToUI "Timezone set to NZ." "Lime"}
+    catch{Write-ToUI "Timezone change failed." "Orange"}
     Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 0 -ErrorAction SilentlyContinue
-
-# Disable item checkboxes in Explorer
-    Write-ToUI "Disabling item checkboxes in Explorer..."
+    Write-ToUI "File extensions visible."
     Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "AutoCheckSelect" 0 -ErrorAction SilentlyContinue
-
-
-# Disable startup programs
+    Write-ToUI "Item checkboxes disabled."
     Write-ToUI "Clearing startup programs..."
     @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Run",
-      "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run") | ForEach-Object {
+      "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run")|ForEach-Object{
         $p=$_
-        (Get-ItemProperty -Path $p -ErrorAction SilentlyContinue).PSObject.Properties |
-            Where-Object {$_.Name -notlike "PS*"} | ForEach-Object {
+        (Get-ItemProperty -Path $p -ErrorAction SilentlyContinue).PSObject.Properties|
+            Where-Object{$_.Name -notlike "PS*"}|ForEach-Object{
                 Write-ToUI "  Disabling: $($_.Name)" "Orange"
-                Remove-ItemProperty -Path $p -Name $_.Name -ErrorAction SilentlyContinue
-            }
-    }
-
-# Disable Task View button on taskbar
-    Write-ToUI "Hiding Task View button..."
-    Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" `
-        -Name "ShowTaskViewButton" -Value 0 -ErrorAction SilentlyContinue
-
-# Disable Widgets (Win11 — both the policy key and the taskbar toggle)
-    Write-ToUI "Disabling Widgets..."
-    $widgetPolicy="HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
-    if(-not(Test-Path $widgetPolicy)){New-Item -Path $widgetPolicy -Force | Out-Null}
-    Set-ItemProperty -Path $widgetPolicy -Name "AllowNewsAndInterests" -Value 0 -ErrorAction SilentlyContinue
-# Taskbar toggle (Win11 22H2+)
-    Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" `
-        -Name "TaskbarDa" -Value 0 -ErrorAction SilentlyContinue
-
-# Windows 10 right-click menu
-    Write-ToUI "Restoring Win10 right-click menu..."
+                Remove-ItemProperty -Path $p -Name $_.Name -ErrorAction SilentlyContinue}}
+    Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowTaskViewButton" 0 -ErrorAction SilentlyContinue
+    Write-ToUI "Task View hidden."
+    $wp="HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
+    if(-not(Test-Path $wp)){New-Item -Path $wp -Force|Out-Null}
+    Set-ItemProperty $wp "AllowNewsAndInterests" 0 -ErrorAction SilentlyContinue
+    Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarDa" 0 -ErrorAction SilentlyContinue
+    Write-ToUI "Widgets disabled."
     $rc="HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
-    if(-not(Test-Path $rc)){New-Item -Path $rc -Force | Out-Null}
-    Set-ItemProperty -Path $rc -Name "(default)" -Value "" -ErrorAction SilentlyContinue
+    if(-not(Test-Path $rc)){New-Item -Path $rc -Force|Out-Null}
+    Set-ItemProperty $rc "(default)" "" -ErrorAction SilentlyContinue
     Stop-Process -Name "explorer" -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2; Start-Process "explorer.exe"
-    Write-ToUI "Explorer restarted."
-
     Write-ToUI "All essential tweaks complete!" "Lime"
 }
 
@@ -754,41 +800,41 @@ function Set-VLCDefault {
     $ve="${env:ProgramFiles}\VideoLAN\VLC\vlc.exe"
     if(-not(Test-Path $ve)){$ve="${env:ProgramFiles(x86)}\VideoLAN\VLC\vlc.exe"}
     if(-not(Test-Path $ve)){Write-ToUI "VLC not found." "Orange"; return}
-    ".mp4",".mkv",".avi",".mov",".wmv",".mp3",".wav",".flac",".m4a",".aac",".m4v",".ts",".mpg",".mpeg" | ForEach-Object {
+    ".mp4",".mkv",".avi",".mov",".wmv",".mp3",".wav",".flac",".m4a",".aac",".m4v",".ts",".mpg",".mpeg"|ForEach-Object{
         $pid2="VLC$_"; $pp="HKCU:\Software\Classes\$pid2"
-        if(-not(Test-Path $pp)){New-Item -Path $pp -Force | Out-Null}
-        New-Item -Path "$pp\shell\open\command" -Force | Out-Null
+        if(-not(Test-Path $pp)){New-Item -Path $pp -Force|Out-Null}
+        New-Item -Path "$pp\shell\open\command" -Force|Out-Null
         Set-ItemProperty "$pp\shell\open\command" "(default)" "`"$ve`" `"%1`"" -ErrorAction SilentlyContinue
         $ep="HKCU:\Software\Classes\$_"
-        if(-not(Test-Path $ep)){New-Item -Path $ep -Force | Out-Null}
+        if(-not(Test-Path $ep)){New-Item -Path $ep -Force|Out-Null}
         Set-ItemProperty $ep "(default)" $pid2 -ErrorAction SilentlyContinue
         $uc="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\$_\UserChoice"
-        if(-not(Test-Path $uc)){New-Item -Path $uc -Force | Out-Null}
+        if(-not(Test-Path $uc)){New-Item -Path $uc -Force|Out-Null}
         Set-ItemProperty $uc "ProgId" $pid2 -ErrorAction SilentlyContinue
         Write-ToUI "  $_ -> VLC"
     }
     Write-ToUI "VLC defaults set." "Lime"
 }
 
-function Run-Installs($AppList, $DoChrome, $DoVLC) {
-    if($AppList.Count -gt 0) {
+function Run-Installs($AppList,$DoChrome,$DoVLC) {
+    if($AppList -contains "__UPDATEALL__"){
+        Write-ToUI "Running winget upgrade --all ..." "Yellow"
+        winget upgrade --all --silent --accept-source-agreements --accept-package-agreements
+        Write-ToUI "All apps updated!" "Lime"; return
+    }
+    if($AppList.Count -gt 0){
         Write-ToUI "Configuring Winget..." "Cyan"
         winget settings --enable bypasscertificatepinningformicrosoftstore
         Start-Sleep -Seconds 2
-        foreach($id in $AppList) {
-            # ShutUp10 has no winget ID — download and launch directly
-            if($id -eq "OOSU10") {
-                Write-ToUI "Downloading O&O ShutUp10..."
+        foreach($id in $AppList){
+            if($id -eq "OOSU10"){
+                Write-ToUI "Downloading O&O ShutUp10..." "Cyan"
                 $dest="$env:TEMP\OOSU10.exe"
-                try {
-                    Invoke-WebRequest -Uri "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" `
+                try{Invoke-WebRequest -Uri "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe" `
                         -OutFile $dest -UseBasicParsing -ErrorAction Stop
                     Write-ToUI "Launching ShutUp10 — configure and close it to continue." "Yellow"
-                    Start-Process $dest -Wait
-                    Write-ToUI "ShutUp10 closed." "Lime"
-                } catch {
-                    Write-ToUI "ShutUp10 download failed — grab it manually from oo-software.com" "Orange"
-                }
+                    Start-Process $dest -Wait; Write-ToUI "ShutUp10 closed." "Lime"
+                }catch{Write-ToUI "ShutUp10 download failed." "Orange"}
                 continue
             }
             Write-ToUI "Installing $id..."
@@ -797,37 +843,32 @@ function Run-Installs($AppList, $DoChrome, $DoVLC) {
         }
     }
     if($DoChrome){Set-ChromeDefault}
-    if($DoVLC)   {Set-VLCDefault}
+    if($DoVLC){Set-VLCDefault}
     Write-ToUI "App installs complete!" "Lime"
 }
 
 # ============================================================
-# APP PICKER — closes BEFORE running, every time
+# APP PICKER
 # ============================================================
-function Show-AppPicker($RunAfter) {
-    $script:pickerSelected  = @()
-    $script:pickerChrome    = $false
-    $script:pickerVLC       = $false
-    $script:pickerConfirmed = $false
+function Show-AppPicker($RunAfter){
+    $script:pickerSelected=$script:pickerChrome=$script:pickerVLC=$script:pickerConfirmed=$false
+    $script:pickerSelected=@()
 
-    $AF = New-Object Windows.Forms.Form
+    $AF=New-Object Windows.Forms.Form
     $AF.Text="Select Apps to Install"; $AF.StartPosition="CenterParent"
     $AF.BackColor=$bgSubForm; $AF.ForeColor=$txtPrimary
     $AF.FormBorderStyle="Sizable"; $AF.MaximizeBox=$false; $AF.MinimizeBox=$false
-    $AF.MinimumSize="410,500"
-    $AF.Size="410,660"   
+    $AF.MinimumSize="410,500"; $AF.Size="410,680"
 
-    # Scrollable panel fills window, leaving room for bottom bar
-    $scroll = New-Object Windows.Forms.Panel
-    $scroll.Location="0,0"; $scroll.Size="410,490"
+    $scroll=New-Object Windows.Forms.Panel
+    $scroll.Location="0,0"; $scroll.Size="410,552"
     $scroll.AutoScroll=$true; $scroll.BackColor=$bgSubForm
     $scroll.Anchor="Top,Left,Right,Bottom"
     $AF.Controls.Add($scroll)
 
-    # Resize handler — keep scroll panel and bottom bar snapped correctly
     $AF.Add_Resize({
-        $scroll.Size="$($AF.ClientSize.Width),$($AF.ClientSize.Height - 128)"
-        $bar.Location="0,$($AF.ClientSize.Height - 128)"
+        $scroll.Size="$($AF.ClientSize.Width),$($AF.ClientSize.Height-128)"
+        $bar.Location="0,$($AF.ClientSize.Height-128)"
         $bar.Size="$($AF.ClientSize.Width),128"
         $bSA.Size="$(($AF.ClientSize.Width/2)-16),28"
         $bSN.Location="$(($AF.ClientSize.Width/2)+6),8"
@@ -836,18 +877,16 @@ function Show-AppPicker($RunAfter) {
         $bUpd.Size="$($AF.ClientSize.Width-20),34"
     })
 
-    $script:ay = 10
-    $cbs = [ordered]@{}
+    $script:ay=10; $cbs=[ordered]@{}
 
-    function AP-Section($title) {
+    function AP-Section($title){
         $s=New-Object Windows.Forms.Label
         $s.Text=$title; $s.Location="14,$($script:ay)"; $s.Size="370,14"
         $s.ForeColor=$txtMuted; $s.BackColor=[Drawing.Color]::Transparent
         $s.Font=New-Object Drawing.Font("Segoe UI",7,[Drawing.FontStyle]::Bold)
         $scroll.Controls.Add($s); $script:ay+=18
     }
-
-    function AP-Check($label,$id,$on) {
+    function AP-Check($label,$id,$on){
         $cb=New-Object Windows.Forms.CheckBox
         $cb.Text=$label; $cb.Location="18,$($script:ay)"; $cb.Size="360,20"
         $cb.ForeColor=$txtPrimary; $cb.BackColor=[Drawing.Color]::Transparent
@@ -855,9 +894,6 @@ function Show-AppPicker($RunAfter) {
         $scroll.Controls.Add($cb); $script:ay+=22; $cbs[$id]=$cb
     }
 
-    # -------------------------------------------------------
-    # CRITICAL — always on by default
-    # -------------------------------------------------------
     AP-Section "CRITICAL  (ticked by default)"
     AP-Check "Microsoft 365 Desktop Suite" "Microsoft.Office"                $true
     AP-Check "Google Chrome"               "Google.Chrome"                   $true
@@ -867,10 +903,7 @@ function Show-AppPicker($RunAfter) {
     AP-Check "7-Zip"                       "7zip.7zip"                       $true
     AP-Check "Adobe Acrobat Reader"        "Adobe.Acrobat.Reader.64-bit"     $true
 
-    $script:ay += 6
-    # -------------------------------------------------------
-    # OPTIONAL — off by default
-    # -------------------------------------------------------
+    $script:ay+=6
     AP-Section "OPTIONAL  (unticked by default)"
     AP-Check "LocalSend"                   "LocalSend.LocalSend"             $false
     AP-Check "CrystalDiskInfo"             "CrystalDewWorld.CrystalDiskInfo" $false
@@ -886,7 +919,7 @@ function Show-AppPicker($RunAfter) {
     AP-Check "Autoruns"                    "Microsoft.Sysinternals.Autoruns" $false
     AP-Check "K-Lite Codec Pack Standard"  "CodecGuide.K-LiteCodecPack.Standard" $false
 
-    $script:ay += 8
+    $script:ay+=8
     AP-Section "SET AS DEFAULT"
 
     $cbCD=New-Object Windows.Forms.CheckBox; $cbCD.Text="Set Chrome as default browser"
@@ -901,13 +934,11 @@ function Show-AppPicker($RunAfter) {
     $cbVD.Font=New-Object Drawing.Font("Segoe UI",9); $cbVD.Checked=$true
     $scroll.Controls.Add($cbVD); $script:ay+=30
 
-    # Padding so last checkbox isn't clipped by scroll panel
     $pad=New-Object Windows.Forms.Label; $pad.Size="10,20"
     $pad.Location="0,$($script:ay)"; $scroll.Controls.Add($pad)
 
-    # ---- Bottom bar — always visible ----
-    $bar = New-Object Windows.Forms.Panel
-    $bar.Location="0,490"; $bar.Size="410,128"
+    $bar=New-Object Windows.Forms.Panel
+    $bar.Location="0,552"; $bar.Size="410,128"
     $bar.BackColor=[Drawing.Color]::FromArgb(22,22,27)
     $bar.Anchor="Bottom,Left,Right"
     $AF.Controls.Add($bar)
@@ -941,356 +972,273 @@ function Show-AppPicker($RunAfter) {
         $sel=@(); foreach($id in $cbs.Keys){if($cbs[$id].Checked){$sel+=$id}}
         if($sel.Count -eq 0 -and -not $cbCD.Checked -and -not $cbVD.Checked){
             [Windows.Forms.MessageBox]::Show("Nothing selected!","Nothing to do"); return}
-        $script:pickerSelected  = $sel
-        $script:pickerChrome    = $cbCD.Checked
-        $script:pickerVLC       = $cbVD.Checked
-        $script:pickerConfirmed = $true
+        $script:pickerSelected=$sel; $script:pickerChrome=$cbCD.Checked
+        $script:pickerVLC=$cbVD.Checked; $script:pickerConfirmed=$true
         $AF.Close()
     })
     $bar.Controls.Add($bGo)
-    $bar.Controls.Add($bGo)
 
-    # Update All button — sits below Install Selected
     $bUpd=New-Object Windows.Forms.Button; $bUpd.Text="  Update All Installed Applications"
     $bUpd.Location="10,86"; $bUpd.Size="364,34"
     $bUpd.FlatStyle="Flat"
-    $bUpd.ForeColor=[Drawing.Color]::FromArgb(200,148,58)   # amber — cautious action
-    $bUpd.BackColor=[Drawing.Color]::FromArgb(42,35,24)
+    $bUpd.ForeColor=[Drawing.Color]::FromArgb(200,148,58); $bUpd.BackColor=[Drawing.Color]::FromArgb(42,35,24)
     $bUpd.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
     $bUpd.FlatAppearance.BorderColor=$border; $bUpd.FlatAppearance.BorderSize=1
     $bUpd.TextAlign="MiddleLeft"; $bUpd.Padding=New-Object Windows.Forms.Padding(10,0,0,0)
     $bUpd.Add_Click({
-        $script:pickerSelected  = @("__UPDATEALL__")
-        $script:pickerChrome    = $false
-        $script:pickerVLC       = $false
-        $script:pickerConfirmed = $true
-        $AF.Close()
+        $script:pickerSelected=@("__UPDATEALL__"); $script:pickerChrome=$false
+        $script:pickerVLC=$false; $script:pickerConfirmed=$true; $AF.Close()
     })
     $bar.Controls.Add($bUpd)
 
-    $AF.ShowDialog() | Out-Null
+    $AF.ShowDialog()|Out-Null
 
-    if($script:pickerConfirmed) {
-        & $RunAfter $script:pickerSelected $script:pickerChrome $script:pickerVLC
-    } else {
-        # User cancelled — restore Install Apps button specifically
-        $b3.Text="  Install Apps"; $b3.Enabled=$true
-    }
+    if($script:pickerConfirmed){& $RunAfter $script:pickerSelected $script:pickerChrome $script:pickerVLC}
+    else{$b3.Text="  APPLICATION PROVISIONING"; $b3.Enabled=$true}
 }
+
 # ============================================================
 # BUTTON HANDLERS
 # ============================================================
-#DEFANG WINDOWS
 $b1.Add_Click({
     [System.Media.SystemSounds]::Asterisk.Play()
     $b1.Enabled=$false; $b1.Text="  Working..."
-    Run-Debloat
-    Run-EssentialTweaks
-    $b1.Text="  Defang Windows  (Bloat + Junk + Tweaks)"; $b1.Enabled=$true
+    Run-Debloat; Run-EssentialTweaks
+    $b1.Text="  SYSTEM SANITIZE — Debloat + Essential Tweaks"; $b1.Enabled=$true
 })
 
-# HP CLEANUP
 $b2.Add_Click({
     [System.Media.SystemSounds]::Asterisk.Play()
     $b2.Enabled=$false; $b2.Text="  Working..."
-    Write-ToUI "Starting HP bloat removal..." "Yellow"
-    @("HP.HPSupportAssistant","HP.HPQuickDrop","HP.HPPrivacySettings",
-      "HP.HPConnectionOptimizer","HP.HPSmart") | ForEach-Object {
-        Write-ToUI "  Uninstalling $_..."
-        winget uninstall --id $_ -e --accept-source-agreements -h --force 2>&1 | Out-Null
+    $manufacturer=(Get-CimInstance Win32_ComputerSystem).Manufacturer
+    Write-ToUI "Detected manufacturer: $manufacturer" "Cyan"
+    $vendor="Unknown"
+    if($manufacturer -match "HP|Hewlett"){$vendor="HP"}
+    elseif($manufacturer -match "Dell"){$vendor="Dell"}
+    elseif($manufacturer -match "Lenovo"){$vendor="Lenovo"}
+    elseif($manufacturer -match "Acer"){$vendor="Acer"}
+    elseif($manufacturer -match "ASUS"){$vendor="ASUS"}
+    elseif($manufacturer -match "MSI"){$vendor="MSI"}
+    elseif($manufacturer -match "Toshiba"){$vendor="Toshiba"}
+    elseif($manufacturer -match "Samsung"){$vendor="Samsung"}
+    elseif($manufacturer -match "Microsoft"){$vendor="Microsoft"}
+    else{Write-ToUI "Unknown system — skipping vendor bloat." "Orange"
+         $b2.Text="  VENDOR PURGE — Auto-detect + Remove Vendor Bloat"; $b2.Enabled=$true; return}
+
+    Write-ToUI "Running $vendor bloatware removal..." "Yellow"
+
+    $vendorBloat=@{
+        "HP"=@("HP.HPSupportAssistant","HP.HPQuickDrop","HP.HPPrivacySettings","HP.HPConnectionOptimizer","HP.HPSmart","HP.HPAudioCenter","HP.HPSystemEventUtility","HP.HPEnhance","HP.HPPCHardwareDiagnosticsWindows")
+        "Dell"=@("Dell.DellSupportAssistforPCs","Dell.DellOptimizer","Dell.DellDigitalDelivery","Dell.DellUpdate","Dell.DellCommandUpdate","Dell.DellPowerManager","Dell.DellCinemaGuide","Dell.DellMobileConnect","Dell.DellCinema")
+        "Lenovo"=@("E046963F.LenovoCompanion","E046963F.LenovoSettings","E0469640.LenovoUtility","E046963F.LenovoSettingsforEnterprise","LenovoCorporation.LenovoSettings","LenovoCorporation.LenovoID","LenovoCorporation.LenovoCompanion")
+        "Acer"=@("AcerIncorporated.AcerRegistration","AcerIncorporated.QuickAccess","AcerIncorporated.UserExperienceImprovementProgram","AcerIncorporated.AcerCollection","AcerIncorporated.AcerCareCenterS","AcerIncorporated.AcerJumpStart")
+        "ASUS"=@("ASUSTeKCOMPUTERINC.GlideXperience","ASUSTeKCOMPUTERINC.ASUSPCAssistant","ASUSTeKCOMPUTERINC.MyASUS","ASUSTeKCOMPUTERINC.ASUSProductRegistrationProgram","ASUSTeKCOMPUTERINC.ASUSWelcome","ASUSTeKCOMPUTERINC.ASUSLiveUpdate")
+        "MSI"=@("MSI.CenterFacade","MSI.DragonCenter","MSI.MSICenter","MSI.MSICenterSDK")
+        "Toshiba"=@("ToshibaCorporation.ToshibaServiceStation","ToshibaCorporation.SettingsforYourTOSHIBA")
+        "Samsung"=@("HONHAIPREC.Samsung_Update","HONHAIPREC.SamsungUpdate")
+        "Microsoft"=@("Microsoft.SurfaceHub","Microsoft.PPIProjection")
     }
-    Get-CimInstance Win32_Product -ErrorAction SilentlyContinue |
-        Where-Object {$_.Name -like "*HP Wolf*" -or $_.Name -like "*HP Sure Sense*"} |
-        ForEach-Object {
-            Write-ToUI "  Force removing: $($_.Name)" "Orange"
-            Invoke-CimMethod -InputObject $_ -MethodName "Uninstall" | Out-Null
+    $vendorWinget=@{
+        "HP"=@("HP.HPSupportAssistant","HP.HPQuickDrop","HP.HPPrivacySettings","HP.HPConnectionOptimizer","HP.HPSmart")
+        "Dell"=@("Dell.CommandUpdate","Dell.DellOptimizer","Dell.DellSupportAssist","Dell.DellDigitalDelivery","Dell.DellPowerManager")
+        "Lenovo"=@("Lenovo.SystemUpdate","Lenovo.VantageService","Lenovo.SmartAppearance")
+        "Acer"=@("Acer.AcerCollection","Acer.QuickAccess")
+        "ASUS"=@();"MSI"=@();"Toshiba"=@();"Samsung"=@();"Microsoft"=@()
+    }
+
+    if($vendorBloat.ContainsKey($vendor)){
+        foreach($app in $vendorBloat[$vendor]){
+            Write-ToUI "Checking AppX: $app"
+            Get-AppxPackage -AllUsers -Name $app -ErrorAction SilentlyContinue|ForEach-Object{
+                Write-ToUI "  Removing: $($_.Name)" "Orange"
+                Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue}
+            Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue|
+                Where-Object{$_.DisplayName -like $app}|ForEach-Object{
+                    Write-ToUI "  Removing provisioned: $($_.DisplayName)" "Orange"
+                    Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue}
         }
-    Write-ToUI "HP cleanup complete!" "Lime"
-    $b2.Text="  HP Cleanup"; $b2.Enabled=$true
+    }
+    if($vendorWinget.ContainsKey($vendor)-and $vendorWinget[$vendor].Count-gt 0){
+        foreach($app in $vendorWinget[$vendor]){
+            Write-ToUI "Uninstalling via Winget: $app"
+            winget uninstall --id $app -e --accept-source-agreements -h --force 2>&1|Out-Null}
+    }
+    if($vendor -eq "HP"){
+        $wolf=Get-CimInstance Win32_Product -ErrorAction SilentlyContinue|
+              Where-Object{$_.Name -like "*HP Wolf*"-or $_.Name -like "*HP Sure Sense*"}
+        foreach($item in $wolf){Write-ToUI "  Force removing: $($item.Name)" "Orange"
+            Invoke-CimMethod -InputObject $item -MethodName "Uninstall"|Out-Null}
+    }
+    if($vendor -eq "Lenovo"){
+        $vantage=Get-CimInstance Win32_Product -ErrorAction SilentlyContinue|
+                 Where-Object{$_.Name -like "*Lenovo Vantage*"}
+        foreach($item in $vantage){Write-ToUI "  Force removing: $($item.Name)" "Orange"
+            Invoke-CimMethod -InputObject $item -MethodName "Uninstall"|Out-Null}
+    }
+    if($vendor -eq "Dell"){
+        $ds=Get-CimInstance Win32_Product -ErrorAction SilentlyContinue|
+            Where-Object{$_.Name -like "*Dell Support*"}
+        foreach($item in $ds){Write-ToUI "  Force removing: $($item.Name)" "Orange"
+            Invoke-CimMethod -InputObject $item -MethodName "Uninstall"|Out-Null}
+    }
+    Write-ToUI "$vendor bloatware removal complete!" "Lime"
+    $b2.Text="  VENDOR PURGE — Auto-detect + Remove Vendor Bloat"; $b2.Enabled=$true
 })
-#Applications
+
 $b3.Add_Click({
     [System.Media.SystemSounds]::Asterisk.Play()
     $b3.Enabled=$false; $b3.Text="  Working..."
-    Show-AppPicker {
-        param($sel,$chrome,$vlc)
+    Show-AppPicker{param($sel,$chrome,$vlc)
         Run-Installs $sel $chrome $vlc
-        $b3.Text="  Install Apps"; $b3.Enabled=$true
-    }
+        $b3.Text="  APPLICATION PROVISIONING"; $b3.Enabled=$true}
 })
-#Accounts
+
 $b4.Add_Click({
     [System.Media.SystemSounds]::Asterisk.Play()
-
-    $F = New-SubForm "Account Manager" 400 380
-    New-SubLbl $F "Create Local Account" 15 12 360 18 $txtMuted 8 | Out-Null
-
-    New-SubLbl $F "Username:" 15 36 360 18 $txtPrimary | Out-Null
-    $tUser = New-SubTxt $F 15 56 360
-
-    New-SubLbl $F "Full Name (optional):" 15 90 360 18 $txtPrimary | Out-Null
-    $tFull = New-SubTxt $F 15 110 360
-
-    New-SubLbl $F "Password:" 15 144 360 18 $txtPrimary | Out-Null
-    $tPass = New-SubTxt $F 15 164 360; $tPass.UseSystemPasswordChar=$true
-
-    New-SubLbl $F "Confirm Password:" 15 198 360 18 $txtPrimary | Out-Null
-    $tConf = New-SubTxt $F 15 218 360; $tConf.UseSystemPasswordChar=$true
-
-    $cbAdmin = New-Object Windows.Forms.CheckBox
+    $F=New-SubForm "Account Manager" 400 340
+    New-SubLbl $F "Create Local Account" 15 12 360 18 $txtMuted 8|Out-Null
+    New-SubLbl $F "Username:" 15 36 360 18 $txtPrimary|Out-Null
+    $tUser=New-SubTxt $F 15 56 360
+    New-SubLbl $F "Full Name (optional):" 15 90 360 18 $txtPrimary|Out-Null
+    $tFull=New-SubTxt $F 15 110 360
+    New-SubLbl $F "Password:" 15 144 360 18 $txtPrimary|Out-Null
+    $tPass=New-SubTxt $F 15 164 360; $tPass.UseSystemPasswordChar=$true
+    New-SubLbl $F "Confirm Password:" 15 198 360 18 $txtPrimary|Out-Null
+    $tConf=New-SubTxt $F 15 218 360; $tConf.UseSystemPasswordChar=$true
+    $cbAdmin=New-Object Windows.Forms.CheckBox
     $cbAdmin.Text="Make this account a local Administrator"
     $cbAdmin.Location="15,252"; $cbAdmin.Size="360,20"
     $cbAdmin.ForeColor=$txtPrimary; $cbAdmin.BackColor=[Drawing.Color]::Transparent
     $cbAdmin.Font=New-Object Drawing.Font("Segoe UI",9); $cbAdmin.Checked=$true
     $F.Controls.Add($cbAdmin)
-
-    $btnCreate = New-SubBtn $F "Create Account" 15 282 222 34 $btnTeal
-    $btnCancel = New-SubBtn $F "Cancel"          245 282 130 34 $btnDim
-
+    $btnCreate=New-SubBtn $F "Create Account" 15 282 222 34 $btnTeal
+    $btnCancel=New-SubBtn $F "Cancel" 245 282 130 34 $btnDim
     $btnCreate.Add_Click({
-        $uname = $tUser.Text.Trim()
-        $fname = $tFull.Text.Trim()
-        if([string]::IsNullOrWhiteSpace($uname)){
-            [Windows.Forms.MessageBox]::Show("Username cannot be empty.","Error"); return}
-        if($tPass.Text -ne $tConf.Text){
-            [System.Media.SystemSounds]::Hand.Play()
-            [Windows.Forms.MessageBox]::Show("Passwords do not match!","Error"); return}
-        if($tPass.Text.Length -lt 1){
-            [Windows.Forms.MessageBox]::Show("Password cannot be empty.","Error"); return}
-        try {
-            $secPass = ConvertTo-SecureString $tPass.Text -AsPlainText -Force
-            $params = @{ Name=$uname; Password=$secPass; ErrorAction="Stop" }
-            if(-not [string]::IsNullOrWhiteSpace($fname)){ $params.FullName=$fname }
-            New-LocalUser @params | Out-Null
-            if($cbAdmin.Checked){
-                Add-LocalGroupMember -Group "Administrators" -Member $uname -ErrorAction Stop
-                Write-ToUI "Account '$uname' created as local Administrator." "Lime"
-            } else {
-                Add-LocalGroupMember -Group "Users" -Member $uname -ErrorAction Stop
-                Write-ToUI "Account '$uname' created as standard User." "Lime"
-            }
-            [Windows.Forms.MessageBox]::Show(
-                "Account '$uname' created!`nGroup: $(if($cbAdmin.Checked){'Administrators'}else{'Users'})",
-                "Done")
+        $uname=$tUser.Text.Trim(); $fname=$tFull.Text.Trim()
+        if([string]::IsNullOrWhiteSpace($uname)){[Windows.Forms.MessageBox]::Show("Username cannot be empty.","Error");return}
+        if($tPass.Text -ne $tConf.Text){[System.Media.SystemSounds]::Hand.Play();[Windows.Forms.MessageBox]::Show("Passwords do not match!","Error");return}
+        if($tPass.Text.Length -lt 1){[Windows.Forms.MessageBox]::Show("Password cannot be empty.","Error");return}
+        try{$secPass=ConvertTo-SecureString $tPass.Text -AsPlainText -Force
+            $params=@{Name=$uname;Password=$secPass;ErrorAction="Stop"}
+            if(-not[string]::IsNullOrWhiteSpace($fname)){$params.FullName=$fname}
+            New-LocalUser @params|Out-Null
+            if($cbAdmin.Checked){Add-LocalGroupMember -Group "Administrators" -Member $uname -ErrorAction Stop
+                Write-ToUI "Account '$uname' created as local Administrator." "Lime"}
+            else{Add-LocalGroupMember -Group "Users" -Member $uname -ErrorAction Stop
+                Write-ToUI "Account '$uname' created as standard User." "Lime"}
+            [Windows.Forms.MessageBox]::Show("Account '$uname' created!`nGroup: $(if($cbAdmin.Checked){'Administrators'}else{'Users'})","Done")
             $F.Close()
-        } catch {
-            [Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")
-        }
+        }catch{[Windows.Forms.MessageBox]::Show("Failed: $($_.Exception.Message)","Error")}
     })
     $btnCancel.Add_Click({$F.Close()})
-    $F.FormBorderStyle = "Sizable"
     $F.ShowDialog()
 })
 
-# ============================================================
-# BUTTON 5 - DIAGNOSTICS
-# ============================================================
 $b5.Add_Click({
     [System.Media.SystemSounds]::Asterisk.Play()
+    Show-DomainTools
+})
 
-    $DF = New-SubForm "Diagnostics & Hardware Tests" 480 420
+$b6.Add_Click({
+    [System.Media.SystemSounds]::Asterisk.Play()
+    $DF=New-SubForm "Diagnostics & Hardware Tests" 480 420
+    New-SubLbl $DF "Run hardware diagnostics and health checks" 15 12 440 18 $txtMuted 8|Out-Null
 
-    New-SubLbl $DF "Run hardware diagnostics and health checks" 15 12 440 18 $txtMuted 8 | Out-Null
-
-    # Battery Report
-    $btnBat = New-Object Windows.Forms.Button
-    $btnBat.Text="Battery Report"; $btnBat.Location="15,45"; $btnBat.Size="440,36"
-    $btnBat.FlatStyle="Flat"; $btnBat.ForeColor=$btnTeal[1]; $btnBat.BackColor=$btnTeal[0]
-    $btnBat.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnBat.FlatAppearance.BorderColor=$border; $btnBat.FlatAppearance.BorderSize=1
+    $btnBat=New-SubBtn $DF "Battery Report" 15 45 440 36 $btnTeal
     $btnBat.Add_Click({
         Write-ToUI "Generating battery report..." "Cyan"
-        $batPath = "$env:USERPROFILE\Desktop\battery-report.html"
-        powercfg /batteryreport /output $batPath 2>&1 | Out-Null
-        if(Test-Path $batPath){
-            Write-ToUI "Battery report saved to Desktop." "Lime"
-            Start-Process $batPath
-        } else {
-            Write-ToUI "Battery report failed — device may not have a battery." "Orange"
-            [Windows.Forms.MessageBox]::Show("Battery report failed.`n`nThis device may not have a battery, or you need to run as Administrator.","Error")
-        }
+        $bp="$env:USERPROFILE\Desktop\battery-report.html"
+        powercfg /batteryreport /output $bp 2>&1|Out-Null
+        if(Test-Path $bp){Write-ToUI "Battery report saved to Desktop." "Lime"; Start-Process $bp}
+        else{Write-ToUI "Battery report failed." "Orange"
+             [Windows.Forms.MessageBox]::Show("Failed — device may not have a battery.","Error")}
     })
-    $DF.Controls.Add($btnBat)
 
-    # Energy Report (detailed power efficiency diagnostics)
-    $btnEnergy = New-Object Windows.Forms.Button
-    $btnEnergy.Text="Energy Efficiency Report  (takes ~60 seconds)"
-    $btnEnergy.Location="15,89"; $btnEnergy.Size="440,36"
-    $btnEnergy.FlatStyle="Flat"; $btnEnergy.ForeColor=$btnTeal[1]; $btnEnergy.BackColor=$btnTeal[0]
-    $btnEnergy.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnEnergy.FlatAppearance.BorderColor=$border; $btnEnergy.FlatAppearance.BorderSize=1
+    $btnEnergy=New-SubBtn $DF "Energy Efficiency Report  (takes ~60 seconds)" 15 89 440 36 $btnTeal
     $btnEnergy.Add_Click({
-        Write-ToUI "Running energy report — this takes ~60 seconds..." "Yellow"
-        $DF.Enabled=$false
-        $energyPath = "$env:USERPROFILE\Desktop\energy-report.html"
-        powercfg /energy /output $energyPath /duration 60 2>&1 | Out-Null
-        $DF.Enabled=$true
-        if(Test-Path $energyPath){
-            Write-ToUI "Energy report saved to Desktop." "Lime"
-            Start-Process $energyPath
-        } else {
-            Write-ToUI "Energy report failed." "Orange"
-            [Windows.Forms.MessageBox]::Show("Energy report failed.`n`nRun as Administrator.","Error")
-        }
+        Write-ToUI "Running energy report (~60s)..." "Yellow"; $DF.Enabled=$false
+        $ep="$env:USERPROFILE\Desktop\energy-report.html"
+        powercfg /energy /output $ep /duration 60 2>&1|Out-Null; $DF.Enabled=$true
+        if(Test-Path $ep){Write-ToUI "Energy report saved to Desktop." "Lime"; Start-Process $ep}
+        else{Write-ToUI "Energy report failed." "Orange"}
     })
-    $DF.Controls.Add($btnEnergy)
 
-    # System Health Report (CBS + DISM integrity checks)
-    $btnHealth = New-Object Windows.Forms.Button
-    $btnHealth.Text="System File Health Check  (DISM + SFC)"
-    $btnHealth.Location="15,133"; $btnHealth.Size="440,36"
-    $btnHealth.FlatStyle="Flat"; $btnHealth.ForeColor=$btnBlue[1]; $btnHealth.BackColor=$btnBlue[0]
-    $btnHealth.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnHealth.FlatAppearance.BorderColor=$border; $btnHealth.FlatAppearance.BorderSize=1
+    $btnHealth=New-SubBtn $DF "System File Health Check  (DISM + SFC)" 15 133 440 36 $btnBlue
     $btnHealth.Add_Click({
-        $confirm = [Windows.Forms.MessageBox]::Show(
-            "This will run DISM and SFC scans.`n`nThis can take 5-15 minutes.`n`nContinue?",
-            "Confirm Health Check","YesNo")
-        if($confirm -ne "Yes"){return}
-
-        Write-ToUI "Running DISM health scan..." "Yellow"
-        $DF.Enabled=$false
-        DISM /Online /Cleanup-Image /ScanHealth 2>&1 | Out-Null
-        DISM /Online /Cleanup-Image /RestoreHealth 2>&1 | Out-Null
-        Write-ToUI "DISM complete. Running SFC..." "Yellow"
-        sfc /scannow 2>&1 | Out-Null
-        $DF.Enabled=$true
-        Write-ToUI "System health check complete." "Lime"
-        [Windows.Forms.MessageBox]::Show("System health check complete.`n`nCheck the console log for details.","Done")
+        if([Windows.Forms.MessageBox]::Show("DISM + SFC can take 5-15 minutes.`nContinue?","Confirm","YesNo") -ne "Yes"){return}
+        Write-ToUI "Running DISM..." "Yellow"; $DF.Enabled=$false
+        DISM /Online /Cleanup-Image /ScanHealth 2>&1|Out-Null
+        DISM /Online /Cleanup-Image /RestoreHealth 2>&1|Out-Null
+        Write-ToUI "Running SFC..." "Yellow"
+        sfc /scannow 2>&1|Out-Null; $DF.Enabled=$true
+        Write-ToUI "Health check complete." "Lime"
+        [Windows.Forms.MessageBox]::Show("Complete.","Done")
     })
-    $DF.Controls.Add($btnHealth)
 
-    # Memory Diagnostic
-    $btnMem = New-Object Windows.Forms.Button
-    $btnMem.Text="Memory Diagnostic  (requires restart)"
-    $btnMem.Location="15,177"; $btnMem.Size="440,36"
-    $btnMem.FlatStyle="Flat"; $btnMem.ForeColor=$btnAmb[1]; $btnMem.BackColor=$btnAmb[0]
-    $btnMem.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnMem.FlatAppearance.BorderColor=$border; $btnMem.FlatAppearance.BorderSize=1
+    $btnMem=New-SubBtn $DF "Memory Diagnostic  (requires restart)" 15 177 440 36 $btnAmb
     $btnMem.Add_Click({
-        $confirm = [Windows.Forms.MessageBox]::Show(
-            "This will schedule a memory test on next boot.`n`nThe computer will restart and run the diagnostic before Windows loads.`n`nRestart now?",
-            "Confirm Memory Test","YesNo")
-        if($confirm -eq "Yes"){
-            Write-ToUI "Scheduling memory diagnostic..." "Yellow"
-            Start-Process "MdSched.exe"
-        }
+        if([Windows.Forms.MessageBox]::Show("Schedule memory test on next boot?","Confirm","YesNo") -eq "Yes"){
+            Write-ToUI "Scheduling memory diagnostic..." "Yellow"; Start-Process "MdSched.exe"}
     })
-    $DF.Controls.Add($btnMem)
 
-    # Disk Health (SMART status)
-    $btnDisk = New-Object Windows.Forms.Button
-    $btnDisk.Text="Disk Health Report  (SMART status)"
-    $btnDisk.Location="15,221"; $btnDisk.Size="440,36"
-    $btnDisk.FlatStyle="Flat"; $btnDisk.ForeColor=$btnBlue[1]; $btnDisk.BackColor=$btnBlue[0]
-    $btnDisk.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnDisk.FlatAppearance.BorderColor=$border; $btnDisk.FlatAppearance.BorderSize=1
+    $btnDisk=New-SubBtn $DF "Disk Health Report  (SMART status)" 15 221 440 36 $btnBlue
     $btnDisk.Add_Click({
         Write-ToUI "Reading disk SMART data..." "Cyan"
-        $disks = Get-PhysicalDisk | Select-Object FriendlyName,HealthStatus,OperationalStatus,MediaType,Size
+        $disks=Get-PhysicalDisk|Select-Object FriendlyName,HealthStatus,OperationalStatus,MediaType,Size
         if($disks){
-            $report = "DISK HEALTH REPORT`n" + ("="*50) + "`n`n"
+            $report="DISK HEALTH REPORT`n"+"="*50+"`n`n"
             foreach($d in $disks){
-                $sizeGB = [math]::Round($d.Size/1GB, 1)
-                $report += "Drive      : $($d.FriendlyName)`n"
-                $report += "Type       : $($d.MediaType)`n"
-                $report += "Size       : $sizeGB GB`n"
-                $report += "Health     : $($d.HealthStatus)`n"
-                $report += "Status     : $($d.OperationalStatus)`n"
-                $report += ("-"*50) + "`n"
+                $sizeGB=[math]::Round($d.Size/1GB,1)
+                $report+="Drive  : $($d.FriendlyName)`nType   : $($d.MediaType)`nSize   : $sizeGB GB`nHealth : $($d.HealthStatus)`nStatus : $($d.OperationalStatus)`n"+"-"*50+"`n"
             }
-            $reportPath = "$env:USERPROFILE\Desktop\disk-health.txt"
-            $report | Out-File $reportPath -Encoding UTF8
-            Write-ToUI "Disk report saved to Desktop." "Lime"
-            Start-Process "notepad.exe" $reportPath
-        } else {
-            Write-ToUI "No disks found." "Orange"
-        }
+            $rp="$env:USERPROFILE\Desktop\disk-health.txt"
+            $report|Out-File $rp -Encoding UTF8
+            Write-ToUI "Disk report saved to Desktop." "Lime"; Start-Process "notepad.exe" $rp
+        }else{Write-ToUI "No disks found." "Orange"}
     })
-    $DF.Controls.Add($btnDisk)
 
-    # Driver Verifier (advanced — can cause instability if misused)
-    $btnDriver = New-Object Windows.Forms.Button
-    $btnDriver.Text="Open Driver Verifier  (advanced)"
-    $btnDriver.Location="15,265"; $btnDriver.Size="440,36"
-    $btnDriver.FlatStyle="Flat"; $btnDriver.ForeColor=$btnRed[1]; $btnDriver.BackColor=$btnRed[0]
-    $btnDriver.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnDriver.FlatAppearance.BorderColor=$border; $btnDriver.FlatAppearance.BorderSize=1
+    $btnDriver=New-SubBtn $DF "Open Driver Verifier  (advanced)" 15 265 440 36 $btnRed
     $btnDriver.Add_Click({
-        $confirm = [Windows.Forms.MessageBox]::Show(
-            "Driver Verifier is an advanced diagnostic tool.`n`nMisuse can cause crashes and boot loops.`n`nOnly proceed if you know what you're doing.`n`nContinue?",
-            "Warning — Advanced Tool","YesNo")
-        if($confirm -eq "Yes"){
-            Start-Process "verifier.exe"
-        }
+        if([Windows.Forms.MessageBox]::Show("Driver Verifier can cause crashes if misused.`nContinue?","Warning","YesNo") -eq "Yes"){
+            Start-Process "verifier.exe"}
     })
-    $DF.Controls.Add($btnDriver)
 
-    # Hardware Info Dump
-    $btnHWInfo = New-Object Windows.Forms.Button
-    $btnHWInfo.Text="Hardware Info Dump  (CPU, RAM, GPU)"
-    $btnHWInfo.Location="15,309"; $btnHWInfo.Size="440,36"
-    $btnHWInfo.FlatStyle="Flat"; $btnHWInfo.ForeColor=$btnBlue[1]; $btnHWInfo.BackColor=$btnBlue[0]
-    $btnHWInfo.Font=New-Object Drawing.Font("Segoe UI",9,[Drawing.FontStyle]::Bold)
-    $btnHWInfo.FlatAppearance.BorderColor=$border; $btnHWInfo.FlatAppearance.BorderSize=1
-    $btnHWInfo.Add_Click({
+    $btnHW=New-SubBtn $DF "Hardware Info Dump  (CPU, RAM, GPU)" 15 309 440 36 $btnBlue
+    $btnHW.Add_Click({
         Write-ToUI "Gathering hardware info..." "Cyan"
-        $cpu = Get-CimInstance Win32_Processor | Select-Object Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed
-        $ram = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
-        $gpu = Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion,VideoModeDescription
-
-        $report = "HARDWARE INFO DUMP`n" + ("="*60) + "`n`n"
-        $report += "CPU`n" + ("-"*60) + "`n"
-        $report += "Name       : $($cpu.Name)`n"
-        $report += "Cores      : $($cpu.NumberOfCores) physical / $($cpu.NumberOfLogicalProcessors) logical`n"
-        $report += "Max Speed  : $($cpu.MaxClockSpeed) MHz`n`n"
-
-        $report += "RAM`n" + ("-"*60) + "`n"
-        $totalRAM = [math]::Round($ram.Sum/1GB, 2)
-        $report += "Total      : $totalRAM GB`n`n"
-
-        $report += "GPU`n" + ("-"*60) + "`n"
-        foreach($g in $gpu){
-            $report += "Name       : $($g.Name)`n"
-            $report += "Driver     : $($g.DriverVersion)`n"
-            $report += "Resolution : $($g.VideoModeDescription)`n"
-            $report += ("-"*60) + "`n"
-        }
-
-        $reportPath = "$env:USERPROFILE\Desktop\hardware-info.txt"
-        $report | Out-File $reportPath -Encoding UTF8
-        Write-ToUI "Hardware info saved to Desktop." "Lime"
-        Start-Process "notepad.exe" $reportPath
+        $cpu=Get-CimInstance Win32_Processor|Select-Object Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed
+        $ram=Get-CimInstance Win32_PhysicalMemory|Measure-Object -Property Capacity -Sum
+        $gpu=Get-CimInstance Win32_VideoController|Select-Object Name,DriverVersion,VideoModeDescription
+        $report="HARDWARE INFO`n"+"="*60+"`n`nCPU`n"+"-"*60+"`n"
+        $report+="Name   : $($cpu.Name)`nCores  : $($cpu.NumberOfCores) physical / $($cpu.NumberOfLogicalProcessors) logical`nSpeed  : $($cpu.MaxClockSpeed) MHz`n`n"
+        $report+="RAM`n"+"-"*60+"`nTotal  : $([math]::Round($ram.Sum/1GB,2)) GB`n`nGPU`n"+"-"*60+"`n"
+        foreach($g in $gpu){$report+="Name   : $($g.Name)`nDriver : $($g.DriverVersion)`nRes    : $($g.VideoModeDescription)`n"+"-"*60+"`n"}
+        $rp="$env:USERPROFILE\Desktop\hardware-info.txt"
+        $report|Out-File $rp -Encoding UTF8
+        Write-ToUI "Hardware info saved to Desktop." "Lime"; Start-Process "notepad.exe" $rp
     })
-    $DF.Controls.Add($btnHWInfo)
 
-    $btnClose = New-SubBtn $DF "Close" 15 353 100 30 $btnDim
+    $btnClose=New-SubBtn $DF "Close" 15 353 100 30 $btnDim
     $btnClose.Add_Click({$DF.Close()})
-
     $DF.ShowDialog()
 })
 
-#Run All
 $bAll.Add_Click({
     if([Windows.Forms.MessageBox]::Show(
-        "Full setup will run:`n`n  Defang Windows (Bloat + Junk + Tweaks)`n  Install selected apps`n`nChoose apps on the next screen.",
-        "Run All","YesNo") -ne "Yes"){return}
+        "Full setup will run:`n`n  System Sanitize`n  Install selected apps`n`nChoose apps on the next screen.",
+        "Total Deploy","YesNo") -ne "Yes"){return}
     [System.Media.SystemSounds]::Asterisk.Play()
-
-    Show-AppPicker {
-        param($sel,$chrome,$vlc)
-        foreach($btn in @($bAll,$b1,$b2,$b3,$b4,$b5)){$btn.Enabled=$false}
+    Show-AppPicker{param($sel,$chrome,$vlc)
+        foreach($btn in @($bAll,$b1,$b2,$b3,$b4,$b5,$b6)){$btn.Enabled=$false}
         $bAll.Text="  Running..."
-        Write-ToUI "=== FULL SETUP STARTED ===" "Yellow"
-        Run-Debloat
-        Run-EssentialTweaks
-        Run-Installs $sel $chrome $vlc
+        Write-ToUI "=== TOTAL DEPLOY STARTED ===" "Yellow"
+        Run-Debloat; Run-EssentialTweaks; Run-Installs $sel $chrome $vlc
         Write-ToUI "=== COMPLETE — PLEASE RESTART ===" "Yellow"
         [System.Media.SystemSounds]::Exclamation.Play()
         [Windows.Forms.MessageBox]::Show("All done!`n`nRestart recommended.","Complete!")
         Refresh-SystemInfo
-        $bAll.Text="  RUN ALL — Full Teacher Setup"
-        foreach($btn in @($bAll,$b1,$b2,$b3,$b4)){$btn.Enabled=$true}
+        $bAll.Text="  TOTAL DEPLOY — Full Provision"
+        foreach($btn in @($bAll,$b1,$b2,$b3,$b4,$b5,$b6)){$btn.Enabled=$true}
     }
 })
 
